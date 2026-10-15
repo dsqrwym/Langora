@@ -1,0 +1,19 @@
+spring:
+  flyway:
+    enabled: false
+
+langora:
+  bootstrap:
+    super-admin:
+      enabled: false
+  security:
+    jwt:
+      access-token-expiration: 15m
+      refresh-token-expiration: 1d
+      secret-key: ${JWT_SECRET_KEY}
+
+    cookie:
+      refresh-token-path: /langora/auth/admin/refresh
+
+    csrf:
+      secret-key: ${CSRF_SECRET_KEY}

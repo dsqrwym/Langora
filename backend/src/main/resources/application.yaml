@@ -1,0 +1,44 @@
+server:
+  port: 8088
+  servlet:
+    context-path: /langora
+
+spring:
+  config:
+    import: optional:file:.env[.properties]
+
+  application:
+    name: Langora
+  profiles:
+    active: dev
+  threads:
+    virtual:
+      enabled: true
+
+langora:
+  bootstrap:
+    super-admin:
+      # Whether to bootstrap the super admin initial data
+      enabled: ${BOOTSTRAP_SUPER_ADMIN_ENABLED:true}
+      email: ${BOOTSTRAP_SUPER_ADMIN_EMAIL:superadmin@langora.com}
+      username: ${BOOTSTRAP_SUPER_ADMIN_USERNAME:SuperAdmin}
+      password: ${BOOTSTRAP_SUPER_ADMIN_PASSWORD:SuperAdmin123}
+      override-existing-password: ${BOOTSTRAP_SUPER_ADMIN_OVERRIDE_PASSWORD:false}
+
+  security:
+    jwt:
+      access-token-expiration: 15m
+      refresh-token-expiration: 1d
+      secret-key: ${JWT_SECRET_KEY}
+
+    cookie:
+      refresh-token-path: /langora/auth/admin/refresh
+
+    csrf:
+      secret-key: ${CSRF_SECRET_KEY}
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
