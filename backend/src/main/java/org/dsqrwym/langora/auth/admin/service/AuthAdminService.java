@@ -50,12 +50,12 @@ public class AuthAdminService {
         final Optional<AuthAdminRepository.SelectedAdminUser> adminUserOptional = adminRepository.findByUsernameOrEmail(loginDto.username(), loginDto.email());
         if (adminUserOptional.isEmpty()) {
             passwordEncoder.matches(loginDto.password(), timingAttackMitigation.getDummyPasswordHash());
-            throw new UnauthorizedException("Invalid username/email or password");
+            throw new UnauthorizedException(ErrorCode.AUTH_INVALID_CREDENTIALS);
         }
 
         final AuthAdminRepository.SelectedAdminUser adminUser = adminUserOptional.get();
         if (!passwordEncoder.matches(loginDto.password(), adminUser.passwordHash())) {
-            throw new UnauthorizedException("Invalid username/email or password");
+            throw new UnauthorizedException(ErrorCode.AUTH_INVALID_CREDENTIALS);
         }
 
         if (adminUser.status() != AdminUserStatus.ACTIVE) {
@@ -127,13 +127,13 @@ public class AuthAdminService {
 
         final AuthAdminSessionRepository.SelectedSessionWithUser session = adminSessionRepository
                 .getSessionByCurrentOrPreviousRefreshTokenHash(refreshTokenHash)
-                .orElseThrow(() -> new UnauthorizedException("Invalid refresh token"));
+                .orElseThrow(() -> new UnauthorizedException(ErrorCode.AUTH_REFRESH_TOKEN_INVALID));
 
         if (session.revokedAt() != null) {
-            throw new UnauthorizedException("Session revoked");
+            throw new UnauthorizedException(ErrorCode.AUTH_SESSION_REVOKED);
         }
         if (session.expiresAt().isBefore(now)) {
-            throw new UnauthorizedException("Session expired");
+            throw new UnauthorizedException(ErrorCode.AUTH_SESSION_EXPIRED);
         }
         if (session.status() != AdminUserStatus.ACTIVE) {
             adminSessionRepository.revokeAllByUser(session.adminUserId(), AdminSessionRevocationReason.ACCOUNT_DISABLED, now);
@@ -145,8 +145,7 @@ public class AuthAdminService {
 
             if (sinceActive.compareTo(Duration.ofSeconds(adminSessionProperties.refreshGraceSeconds())) <= 0) {
                 // Frontend needs to wait for the in-flight refresh to finish instead of retrying with the old token.
-                throw new ConflictException(ErrorCode.AUTH_REFRESH_IN_PROGRESS,
-                        "Token already rotated by a concurrent request");
+                throw new ConflictException(ErrorCode.AUTH_REFRESH_IN_PROGRESS);
             }
 
             // Outside grace window: treat as a stolen token being replayed — revoke everything.
@@ -167,8 +166,7 @@ public class AuthAdminService {
                         now
                 ));
             });
-            throw new UnauthorizedException(ErrorCode.AUTH_REFRESH_REUSED,
-                    "Refresh token reuse detected, all sessions revoked");
+            throw new UnauthorizedException(ErrorCode.AUTH_REFRESH_REUSED);
         }
 
         final GeneratedToken newToken = jwtTokenService.generateRefreshToken(session.adminUserId(), sessionId, now);
@@ -179,8 +177,7 @@ public class AuthAdminService {
                 sessionId, refreshTokenHash, newRefreshTokenHash, lastIp, newToken.expiresAt(), now);
         if (rows == 0) {
             // Another request won the race; avise the frontend to wait for its response.
-            throw new ConflictException(ErrorCode.AUTH_REFRESH_IN_PROGRESS,
-                    "Token already rotated by a concurrent request");
+            throw new ConflictException(ErrorCode.AUTH_REFRESH_IN_PROGRESS);
         }
 
         final UserJwtPayload payload = UserJwtPayload.forAdmin(

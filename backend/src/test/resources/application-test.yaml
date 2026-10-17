@@ -10,10 +10,11 @@ langora:
     jwt:
       access-token-expiration: 15m
       refresh-token-expiration: 1d
-      secret-key: ${JWT_SECRET_KEY}
+      # Deliberately public test values. Tests must not depend on the developer .env file.
+      secret-key: test-only-jwt-secret-key-must-be-at-least-32-chars
 
     cookie:
       refresh-token-path: /langora/auth/admin/refresh
 
     csrf:
-      secret-key: ${CSRF_SECRET_KEY}
+      secret-key: test-only-csrf-secret-key-must-be-at-least-32-chars

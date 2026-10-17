@@ -98,29 +98,29 @@ public class SecurityConfig {
                                                 .jwtAuthenticationConverter(authenticationConverter)
                                 )
                                 .authenticationEntryPoint((_, res, _) ->
-                                        write(res, HttpStatus.UNAUTHORIZED, ErrorCode.UNAUTHORIZED.name(), jsonMapper)
+                                        write(res, HttpStatus.UNAUTHORIZED, ErrorCode.AUTH_ACCESS_TOKEN_INVALID, jsonMapper)
                                 )
                                 .accessDeniedHandler((_, res, _) ->
-                                        write(res, HttpStatus.FORBIDDEN, ErrorCode.FORBIDDEN.name(), jsonMapper)
+                                        write(res, HttpStatus.FORBIDDEN, ErrorCode.ACCESS_DENIED, jsonMapper)
                                 )
                 )
 
                 // Handle authentication and authorization errors
                 .exceptionHandling(error ->
                         error.authenticationEntryPoint((_, res, _) ->
-                                write(res, HttpStatus.UNAUTHORIZED, ErrorCode.UNAUTHORIZED.name(), jsonMapper)
+                                write(res, HttpStatus.UNAUTHORIZED, ErrorCode.AUTH_ACCESS_TOKEN_INVALID, jsonMapper)
                         ).accessDeniedHandler((_, res, _) ->
-                                write(res, HttpStatus.FORBIDDEN, ErrorCode.FORBIDDEN.name(), jsonMapper)
+                                write(res, HttpStatus.FORBIDDEN, ErrorCode.ACCESS_DENIED, jsonMapper)
                         )
                 );
         return http.build();
     }
 
     private static void write(HttpServletResponse res, HttpStatus s,
-                              String code, JsonMapper jsonMapper) throws IOException {
+                              ErrorCode code, JsonMapper jsonMapper) throws IOException {
         res.setStatus(s.value());
         res.setContentType("application/json;charset=UTF-8");
         jsonMapper.writeValue(res.getWriter(),
-                ApiResponse.error(s, code, s.getReasonPhrase(), null));
+                ApiResponse.error(s, code, null));
     }
 }

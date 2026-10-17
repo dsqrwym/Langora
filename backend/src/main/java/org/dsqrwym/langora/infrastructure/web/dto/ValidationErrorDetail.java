@@ -1,3 +1,5 @@
 package org.dsqrwym.langora.infrastructure.web.dto;
 
-public record ValidationErrorDetail(String field, String code, String message){}
+import org.dsqrwym.langora.infrastructure.web.ErrorCode;
+
+public record ValidationErrorDetail(String field, ErrorCode code, String message) {}

@@ -11,12 +11,10 @@ import org.springframework.http.HttpStatus;
 public sealed class BusinessException extends RuntimeException permits ConflictException, ForbiddenException, InternalServerException, NotFoundException, UnauthorizedException {
     public final HttpStatus status;
     public final ErrorCode code;
-    public final String msg;
 
-    public BusinessException(HttpStatus status, ErrorCode code, String msg) {
-        super(msg, null, true, false);
+    public BusinessException(HttpStatus status, ErrorCode code) {
+        super(code.defaultMessage(), null, true, false);
         this.code = code;
         this.status = status;
-        this.msg = msg;
     }
 }

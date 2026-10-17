@@ -9,7 +9,6 @@ import org.dsqrwym.langora.auth.dto.LoginRequestDto;
 import org.dsqrwym.langora.auth.dto.LoginResponseDto;
 import org.dsqrwym.langora.auth.dto.RefreshTokenResponse;
 import org.dsqrwym.langora.auth.jwt.JwtTokenService;
-import org.dsqrwym.langora.auth.jwt.UserJwtAuthenticationToken;
 import org.dsqrwym.langora.auth.jwt.UserJwtPayload;
 import org.dsqrwym.langora.auth.service.AuthCookieService;
 import org.dsqrwym.langora.auth.service.AuthCsrfService;
@@ -21,7 +20,6 @@ import org.dsqrwym.langora.infrastructure.web.exception.ConflictException;
 import org.dsqrwym.langora.infrastructure.web.exception.ForbiddenException;
 import org.dsqrwym.langora.infrastructure.web.exception.UnauthorizedException;
 import org.springframework.http.HttpHeaders;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
@@ -63,13 +61,13 @@ public class AuthAdminController {
 
         String refreshToken = cookieService.extractRefreshToken(req);
         if (!StringUtils.hasText(refreshToken)) {
-            throw new UnauthorizedException("Missing refresh token cookie");
+            throw new UnauthorizedException(ErrorCode.AUTH_REFRESH_TOKEN_MISSING);
         }
 
         UUID sessionId = jwtService.verifyAndExtractSessionId(refreshToken);
 
         if (!csrfService.validateCsrfToken(sessionId, csrfToken)) {
-            throw new ForbiddenException(ErrorCode.FORBIDDEN, "Invalid or missing CSRF token");
+            throw new ForbiddenException(ErrorCode.AUTH_CSRF_INVALID);
         }
 
         final String userAgent = TextUtils.safeSubstring(
@@ -99,12 +97,10 @@ public class AuthAdminController {
     }
 
     @PostMapping("/logout")
-    @PreAuthorize("isAuthenticated()")
     public ApiResponse<Void> logout(
-            @AuthenticationPrincipal UserJwtAuthenticationToken auth,
+            @AuthenticationPrincipal UserJwtPayload payload,
             HttpServletRequest req, HttpServletResponse res) {
 
-        UserJwtPayload payload = auth.getPrincipal();
         final String userAgent = TextUtils.safeSubstring(
                 TextUtils.defaultIfNull(req.getHeader(HttpHeaders.USER_AGENT), "unknown"), 500);
 

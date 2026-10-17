@@ -28,7 +28,7 @@ public final class HashUtils {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             return HexFormat.of().formatHex(digest.digest(input.getBytes(StandardCharsets.UTF_8)));
         } catch (NoSuchAlgorithmException e) {
-            throw new InternalServerException("SHA-256 algorithm not found");
+            throw new InternalServerException();
         }
     }
 
@@ -54,7 +54,7 @@ public final class HashUtils {
             byte[] result = mac.doFinal(message.getBytes(StandardCharsets.UTF_8));
             return HexFormat.of().formatHex(result);
         } catch (NoSuchAlgorithmException | InvalidKeyException e) {
-            throw new InternalServerException("HmacSHA256 failed");
+            throw new InternalServerException();
         }
     }
 }

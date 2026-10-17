@@ -2,6 +2,7 @@ package org.dsqrwym.langora.auth.jwt;
 
 import org.dsqrwym.langora.infrastructure.security.config.JwtConfig;
 import org.dsqrwym.langora.infrastructure.security.properties.JwtProperties;
+import org.dsqrwym.langora.infrastructure.web.ErrorCode;
 import org.dsqrwym.langora.infrastructure.web.exception.UnauthorizedException;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
@@ -69,17 +70,17 @@ public class JwtTokenService {
 
     public UUID verifyAndExtractSessionId(String refreshToken) {
         if (refreshToken == null || refreshToken.isBlank()) {
-            throw new UnauthorizedException("Missing refresh token");
+            throw new UnauthorizedException(ErrorCode.AUTH_REFRESH_TOKEN_MISSING);
         }
         try {
             Jwt jwt = refreshTokenDecoder.decode(refreshToken);
             String raw = jwt.getClaimAsString(UserJwtPayload.CLAIM_NAME_SESSION_ID);
             if (raw == null) {
-                throw new UnauthorizedException("Refresh token missing session id");
+                throw new UnauthorizedException(ErrorCode.AUTH_REFRESH_TOKEN_INVALID);
             }
             return UUID.fromString(raw);
         } catch (JwtException | IllegalArgumentException e) {
-            throw new UnauthorizedException("Invalid or expired refresh token");
+            throw new UnauthorizedException(ErrorCode.AUTH_REFRESH_TOKEN_INVALID);
         }
     }
 }

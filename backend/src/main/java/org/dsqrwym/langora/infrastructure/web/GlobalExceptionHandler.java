@@ -19,6 +19,7 @@ import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @RestControllerAdvice
@@ -39,14 +40,16 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             @NonNull Exception ex, Object body, @NonNull HttpHeaders headers, @NonNull HttpStatusCode status, @NonNull WebRequest request
     ) {
         HttpStatus resolvedStatus = HttpStatus.resolve(status.value());
-        String reason = (resolvedStatus != null) ? resolvedStatus.getReasonPhrase() : "Request failed";
+        HttpStatus responseStatus = resolvedStatus != null ? resolvedStatus : HttpStatus.INTERNAL_SERVER_ERROR;
 
-        return ResponseEntity.status(resolvedStatus != null ? resolvedStatus : HttpStatus.INTERNAL_SERVER_ERROR).headers(headers).body(ApiResponse.error(status, "HTTP_" + status.value(), reason, null));
+        return ResponseEntity.status(responseStatus).headers(headers).body(
+                ApiResponse.error(responseStatus, ErrorCode.fromHttpStatus(responseStatus), null)
+        );
     }
 
     /**
      * Bean Validation on @RequestBody
-     * data: {"field": "field_name", "code": "validation_code"}
+     * data: {"field": "field_name", "code": "VALIDATION_*"}
      *
      * @param ex      the exception to handle
      * @param headers the headers to be written to the response
@@ -56,10 +59,17 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
      */
     @Override
     protected @Nullable ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException ex, @NonNull HttpHeaders headers, @NonNull HttpStatusCode status, @NonNull WebRequest request) {
-        List<ValidationErrorDetail> details = ex.getBindingResult().getFieldErrors().stream()
-                .map(error -> new ValidationErrorDetail(error.getField(), String.valueOf(error.getCode()), error.getDefaultMessage()))
-                .toList();
-        return ResponseEntity.status(status).headers(headers).body(ApiResponse.error(status, "HTTP_" + status.value(), ApiResponse.MSG_VALIDATION_FAILED, details));
+        List<ValidationErrorDetail> details = new ArrayList<>();
+        ex.getBindingResult().getFieldErrors().forEach(error -> details.add(
+                new ValidationErrorDetail(error.getField(), validationCode(error.getCode()), error.getDefaultMessage())
+        ));
+        ex.getBindingResult().getGlobalErrors().forEach(error -> details.add(
+                new ValidationErrorDetail("$request", validationCode(error.getCode()), error.getDefaultMessage())
+        ));
+
+        return ResponseEntity.status(status).headers(headers).body(
+                ApiResponse.error(status, ErrorCode.VALIDATION_FAILED, details)
+        );
     }
 
     /**
@@ -75,11 +85,14 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     protected @Nullable ResponseEntity<Object> handleHandlerMethodValidationException(@NonNull HandlerMethodValidationException ex, @NonNull HttpHeaders headers, @NonNull HttpStatusCode status, @NonNull WebRequest request) {
         List<ParamErrorDetail> details = ex.getParameterValidationResults().stream()
                 .map(
-                        error -> new ParamErrorDetail(String.valueOf(error.getMethodParameter().getParameterName()), "Invalid")
+                        error -> new ParamErrorDetail(
+                                String.valueOf(error.getMethodParameter().getParameterName()),
+                                ErrorCode.VALIDATION_INVALID_VALUE
+                        )
                 )
                 .toList();
         return ResponseEntity.badRequest().body(
-                ApiResponse.error(HttpStatus.BAD_REQUEST, ApiResponse.VALIDATION_ERROR_CODE, ApiResponse.MSG_VALIDATION_FAILED, details)
+                ApiResponse.error(HttpStatus.BAD_REQUEST, ErrorCode.VALIDATION_FAILED, details)
         );
     }
 
@@ -91,12 +104,12 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         List<ValidationErrorDetail> details = ex.getConstraintViolations().stream()
                 .map(error -> new ValidationErrorDetail(
                         error.getPropertyPath().toString(),
-                        error.getConstraintDescriptor().getAnnotation().annotationType().getSimpleName(),
+                        validationCode(error.getConstraintDescriptor().getAnnotation().annotationType().getSimpleName()),
                         error.getMessage()
                 )).toList();
 
         return ResponseEntity.badRequest().body(
-                ApiResponse.error(HttpStatus.BAD_REQUEST, ApiResponse.VALIDATION_ERROR_CODE, ApiResponse.MSG_VALIDATION_FAILED, details)
+                ApiResponse.error(HttpStatus.BAD_REQUEST, ErrorCode.VALIDATION_FAILED, details)
         );
     }
 
@@ -109,7 +122,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<ApiResponse<Void>> onBusinessException(BusinessException ex) {
         return ResponseEntity.status(ex.status).body(
-                ApiResponse.error(ex.status, ex.code.name(), ex.msg, null)
+                ApiResponse.error(ex.status, ex.code, null)
         );
     }
 
@@ -122,7 +135,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ApiResponse<Void>> onAccessDeniedException(AccessDeniedException ex) {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(
-                ApiResponse.error(HttpStatus.FORBIDDEN, ErrorCode.FORBIDDEN.name(), ApiResponse.MSG_FORBIDDEN, null)
+                ApiResponse.error(HttpStatus.FORBIDDEN, ErrorCode.ACCESS_DENIED, null)
         );
     }
 
@@ -130,8 +143,22 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> onUnknownException(Exception ex) {
         logger.error("Unknown exception", ex);
         return ResponseEntity.internalServerError().body(
-                ApiResponse.error(HttpStatus.INTERNAL_SERVER_ERROR, ErrorCode.INTERNAL_ERROR.name(), ApiResponse.MSG_INTERNAL_ERROR, null)
+                ApiResponse.error(HttpStatus.INTERNAL_SERVER_ERROR, ErrorCode.INTERNAL_ERROR, null)
         );
+    }
+
+    private static ErrorCode validationCode(String constraintName) {
+        if (constraintName == null) {
+            return ErrorCode.VALIDATION_INVALID_VALUE;
+        }
+
+        return switch (constraintName) {
+            case "NotBlank", "NotEmpty", "NotNull" -> ErrorCode.VALIDATION_REQUIRED;
+            case "Size", "Length" -> ErrorCode.VALIDATION_LENGTH_OUT_OF_RANGE;
+            case "AssertTrue", "AssertFalse" -> ErrorCode.VALIDATION_INVALID_COMBINATION;
+            case "Email", "Pattern", "UUID", "AdminUsername", "StrongPassword" -> ErrorCode.VALIDATION_INVALID_FORMAT;
+            default -> ErrorCode.VALIDATION_INVALID_VALUE;
+        };
     }
 
 }

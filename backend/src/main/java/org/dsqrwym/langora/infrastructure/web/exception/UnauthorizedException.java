@@ -4,15 +4,11 @@ import org.dsqrwym.langora.infrastructure.web.ErrorCode;
 import org.springframework.http.HttpStatus;
 
 public final class UnauthorizedException extends BusinessException {
-    public UnauthorizedException(String msg) {
-        super(HttpStatus.UNAUTHORIZED, ErrorCode.UNAUTHORIZED, msg);
-    }
-
-    public UnauthorizedException(ErrorCode code, String msg) {
-        super(HttpStatus.UNAUTHORIZED, code, msg);
+    public UnauthorizedException(ErrorCode code) {
+        super(HttpStatus.UNAUTHORIZED, code);
     }
 
     public UnauthorizedException() {
-        this("Unauthorized or invalid credentials");
+        this(ErrorCode.AUTH_ACCESS_TOKEN_INVALID);
     }
 }

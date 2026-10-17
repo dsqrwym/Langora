@@ -1,4 +1,6 @@
 package org.dsqrwym.langora.infrastructure.web.dto;
 
-public record ParamErrorDetail(String param, String code) {
+import org.dsqrwym.langora.infrastructure.web.ErrorCode;
+
+public record ParamErrorDetail(String param, ErrorCode code) {
 }

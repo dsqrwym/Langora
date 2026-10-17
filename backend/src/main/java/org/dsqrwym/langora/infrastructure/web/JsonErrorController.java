@@ -25,6 +25,6 @@ public class JsonErrorController implements ErrorController {
         if (status == null) status = HttpStatus.INTERNAL_SERVER_ERROR;
 
         return ResponseEntity.status(status).body(
-                ApiResponse.error(status, "HTTP_" + status.value(), ApiResponse.MSG_REQUEST_FAILED, null));
+                ApiResponse.error(status, ErrorCode.fromHttpStatus(status), null));
     }
 }
