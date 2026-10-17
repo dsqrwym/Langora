@@ -73,6 +73,7 @@ public class AuthAdminSessionRepository {
     }
 
     public record SelectedSessionWithUser(
+            UUID sessionId,
             Long adminUserId,
             String refreshTokenHash,
             String previousRefreshTokenHash,
@@ -91,6 +92,7 @@ public class AuthAdminSessionRepository {
 
     public Optional<SelectedSessionWithUser> getSessionByCurrentOrPreviousRefreshTokenHash(String refreshTokenHash) {
         return db.select(
+                        ADMIN_USER_SESSIONS.ID,
                         ADMIN_USER_SESSIONS.ADMIN_USER_ID,
                         ADMIN_USER_SESSIONS.REFRESH_TOKEN_HASH,
                         ADMIN_USER_SESSIONS.PREVIOUS_REFRESH_TOKEN_HASH,
@@ -117,6 +119,18 @@ public class AuthAdminSessionRepository {
                 .set(ADMIN_USER_SESSIONS.REVOKED_AT, revokedAt)
                 .set(ADMIN_USER_SESSIONS.REVOKED_REASON, reason)
                 .where(ADMIN_USER_SESSIONS.ADMIN_USER_ID.eq(userId))
+                .and(ADMIN_USER_SESSIONS.REVOKED_AT.isNull())
+                .execute();
+    }
+
+    /**
+     * Revokes a single session by ID. Used for logout.
+     */
+    public void revokeSession(UUID sessionId, AdminSessionRevocationReason reason, Instant revokedAt) {
+        db.update(ADMIN_USER_SESSIONS)
+                .set(ADMIN_USER_SESSIONS.REVOKED_AT, revokedAt)
+                .set(ADMIN_USER_SESSIONS.REVOKED_REASON, reason)
+                .where(ADMIN_USER_SESSIONS.ID.eq(sessionId))
                 .and(ADMIN_USER_SESSIONS.REVOKED_AT.isNull())
                 .execute();
     }

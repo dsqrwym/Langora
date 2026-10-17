@@ -1,6 +1,7 @@
 package org.dsqrwym.langora.auth.jwt;
 
 import lombok.Getter;
+import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
@@ -29,8 +30,9 @@ public class UserJwtAuthenticationToken extends AbstractAuthenticationToken {
         return token;
     }
 
+    // principal is always set in the constructor — never null despite parent's @Nullable contract
     @Override
-    public @Nullable UserJwtPayload getPrincipal() {
+    public @NonNull UserJwtPayload getPrincipal() {
         return principal;
     }
 

@@ -103,4 +103,35 @@ public class AuthAuditEvents {
         return dto;
     }
 
+    /**
+     * Creates an audit event for an administrator logout.
+     *
+     * @param userId    ID of the administrator who logged out
+     * @param username  Username of the administrator
+     * @param sessionId ID of the session that was revoked
+     * @param ipAddress IP of the logout request
+     * @param userAgent User-Agent of the logout request
+     * @param logoutTime Timestamp of the logout
+     */
+    public static @NonNull OperationDto adminLogout(
+            Long userId, String username, UUID sessionId,
+            String ipAddress, String userAgent,
+            Instant logoutTime
+    ) {
+        OperationDto dto = new OperationDto(
+                OperationLogActorType.ADMIN,
+                OperationLogAction.LOGOUT,
+                OperationLogResourceType.ADMIN_USER_SESSION,
+                logoutTime
+        );
+
+        dto.setActorId(userId.toString());
+        dto.setActorDisplayName(username);
+        dto.setResourceId(sessionId.toString());
+        dto.setIpAddress(ipAddress);
+        dto.setUserAgent(userAgent);
+
+        return dto;
+    }
+
 }

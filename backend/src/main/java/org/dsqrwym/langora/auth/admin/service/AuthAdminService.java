@@ -17,6 +17,7 @@ import org.dsqrwym.langora.infrastructure.jooq.enums.AdminSessionRevocationReaso
 import org.dsqrwym.langora.infrastructure.jooq.enums.AdminUserStatus;
 import org.dsqrwym.langora.infrastructure.security.TimingAttackMitigation;
 import org.dsqrwym.langora.infrastructure.util.HashUtils;
+import org.dsqrwym.langora.infrastructure.web.ErrorCode;
 import org.dsqrwym.langora.infrastructure.web.exception.ConflictException;
 import org.dsqrwym.langora.infrastructure.web.exception.ForbiddenException;
 import org.dsqrwym.langora.infrastructure.web.exception.UnauthorizedException;
@@ -120,7 +121,7 @@ public class AuthAdminService {
         );
     }
 
-    public RefreshTokenResponse refreshToken(String refreshToken, UUID sessionId, String lastIp) {
+    public RefreshTokenResponse refreshToken(String refreshToken, UUID sessionId, String lastIp, String userAgent) {
         final Instant now = Instant.now();
         final String refreshTokenHash = HashUtils.sha256Hex(refreshToken);
 
@@ -139,43 +140,48 @@ public class AuthAdminService {
             throw ForbiddenException.accountDisabled();
         }
 
-        // reuse detected
         if (refreshTokenHash.equals(session.previousRefreshTokenHash())) {
             Duration sinceActive = Duration.between(session.lastActiveAt(), now);
 
-            // in grace period
             if (sinceActive.compareTo(Duration.ofSeconds(adminSessionProperties.refreshGraceSeconds())) <= 0) {
-                throw new ConflictException("Concurrent refresh, please retry");
+                // Frontend needs to wait for the in-flight refresh to finish instead of retrying with the old token.
+                throw new ConflictException(ErrorCode.AUTH_REFRESH_IN_PROGRESS,
+                        "Token already rotated by a concurrent request");
             }
 
-            // out of grade
+            // Outside grace window: treat as a stolen token being replayed — revoke everything.
             tx.executeWithoutResult(_ -> {
-                int revokedCount = adminSessionRepository.revokeAllByUser(session.adminUserId(), AdminSessionRevocationReason.TOKEN_REUSE_DETECTED, now);
+                int revokedCount = adminSessionRepository.revokeAllByUser(
+                        session.adminUserId(), AdminSessionRevocationReason.TOKEN_REUSE_DETECTED, now);
 
+                // Use current request's IP/UA (the replayer), not the stored ones from the last legitimate request.
                 operationLogService.insert(AuthAuditEvents.tokenReuseDetected(
                         session.adminUserId(),
                         session.username(),
-                        sessionId,
+                        session.sessionId(),
                         session.deviceName(),
                         revokedCount,
                         sinceActive.toSeconds(),
-                        session.lastIp(),
-                        session.userAgent(),
+                        lastIp,
+                        userAgent,
                         now
                 ));
             });
-            throw new UnauthorizedException("Refresh token reuse detected");
+            throw new UnauthorizedException(ErrorCode.AUTH_REFRESH_REUSED,
+                    "Refresh token reuse detected, all sessions revoked");
         }
 
         final GeneratedToken newToken = jwtTokenService.generateRefreshToken(session.adminUserId(), sessionId, now);
         final String newRefreshTokenHash = HashUtils.sha256Hex(newToken.token());
 
-        final int rows = adminSessionRepository.rotateRefreshToken(sessionId, refreshTokenHash, newRefreshTokenHash, lastIp, newToken.expiresAt(), now);
+        // CAS update: only succeeds if no concurrent request already rotated this token.
+        final int rows = adminSessionRepository.rotateRefreshToken(
+                sessionId, refreshTokenHash, newRefreshTokenHash, lastIp, newToken.expiresAt(), now);
         if (rows == 0) {
-            // Concurrent refresh, let client retry
-            throw new ConflictException("Concurrent refresh, please retry");
+            // Another request won the race; avise the frontend to wait for its response.
+            throw new ConflictException(ErrorCode.AUTH_REFRESH_IN_PROGRESS,
+                    "Token already rotated by a concurrent request");
         }
-
 
         final UserJwtPayload payload = UserJwtPayload.forAdmin(
                 session.adminUserId(), session.username(), session.email(), session.role().name(), sessionId
@@ -184,6 +190,14 @@ public class AuthAdminService {
         final String newAccessToken = jwtTokenService.generateAccessToken(payload, now);
 
         return new RefreshTokenResponse(newAccessToken, newToken.token());
+    }
+
+    public void logout(UUID sessionId, Long userId, String username, String lastIp, String userAgent) {
+        final Instant now = Instant.now();
+        tx.executeWithoutResult(_ -> {
+            adminSessionRepository.revokeSession(sessionId, AdminSessionRevocationReason.LOGOUT, now);
+            operationLogService.insert(AuthAuditEvents.adminLogout(userId, username, sessionId, lastIp, userAgent, now));
+        });
     }
 
 }
