@@ -147,4 +147,19 @@ public class AuthAdminSessionRepository {
                 .and(ADMIN_USER_SESSIONS.REVOKED_AT.isNull())
                 .execute();
     }
+
+    public int purgeSessionsEndedBefore(Instant cutoffTime) {
+        return db.delete(ADMIN_USER_SESSIONS)
+                .where(
+                        // has been revoked, and revocation was more than (cutoff time) ago
+                        ADMIN_USER_SESSIONS.REVOKED_AT.isNotNull()
+                                .and(ADMIN_USER_SESSIONS.REVOKED_AT.lt(cutoffTime))
+                )
+                .or(
+                        // not actively revoked, but the expiration was more than (cutoff time) ago
+                        ADMIN_USER_SESSIONS.REVOKED_AT.isNull()
+                                .and(ADMIN_USER_SESSIONS.EXPIRES_AT.lt(cutoffTime))
+                )
+                .execute();
+    }
 }

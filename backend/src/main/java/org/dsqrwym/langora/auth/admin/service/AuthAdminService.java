@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.dsqrwym.langora.audit.OperationLogRepository;
 import org.dsqrwym.langora.audit.auth.AuthAuditEvents;
-import org.dsqrwym.langora.auth.admin.config.AdminSessionProperties;
+import org.dsqrwym.langora.auth.admin.config.AuthAdminSessionProperties;
 import org.dsqrwym.langora.auth.dto.LoginRequestDto;
 import org.dsqrwym.langora.auth.dto.LoginResponseDto;
 import org.dsqrwym.langora.auth.admin.repository.AuthAdminRepository;
@@ -36,7 +36,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class AuthAdminService {
     private final TransactionTemplate tx;
-    private final AdminSessionProperties adminSessionProperties;
+    private final AuthAdminSessionProperties authAdminSessionProperties;
     private final AuthAdminRepository adminRepository;
     private final AuthAdminSessionRepository adminSessionRepository;
     private final OperationLogRepository operationLogService;
@@ -92,7 +92,7 @@ public class AuthAdminService {
 
             adminSessionRepository.revokeOldsSessions(
                     adminUser.id(),
-                    adminSessionProperties.getMaxSessionByRole(adminUser.role()),
+                    authAdminSessionProperties.getMaxSessionByRole(adminUser.role()),
                     now
             );
 
@@ -143,7 +143,7 @@ public class AuthAdminService {
         if (refreshTokenHash.equals(session.previousRefreshTokenHash())) {
             Duration sinceActive = Duration.between(session.lastActiveAt(), now);
 
-            if (sinceActive.compareTo(Duration.ofSeconds(adminSessionProperties.refreshGraceSeconds())) <= 0) {
+            if (sinceActive.compareTo(Duration.ofSeconds(authAdminSessionProperties.refreshGraceSeconds())) <= 0) {
                 // Frontend needs to wait for the in-flight refresh to finish instead of retrying with the old token.
                 throw new ConflictException(ErrorCode.AUTH_REFRESH_IN_PROGRESS);
             }

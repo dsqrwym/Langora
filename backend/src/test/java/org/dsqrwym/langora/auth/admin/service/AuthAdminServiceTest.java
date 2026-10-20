@@ -1,7 +1,7 @@
 package org.dsqrwym.langora.auth.admin.service;
 
 import org.dsqrwym.langora.audit.OperationLogRepository;
-import org.dsqrwym.langora.auth.admin.config.AdminSessionProperties;
+import org.dsqrwym.langora.auth.admin.config.AuthAdminSessionProperties;
 import org.dsqrwym.langora.auth.admin.repository.AuthAdminRepository;
 import org.dsqrwym.langora.auth.admin.repository.AuthAdminSessionRepository;
 import org.dsqrwym.langora.auth.dto.LoginRequestDto;
@@ -73,7 +73,7 @@ class AuthAdminServiceTest {
     void setUp() {
         service = new AuthAdminService(
                 transactionTemplate,
-                new AdminSessionProperties(3, 5, 5, 5),
+                new AuthAdminSessionProperties(3, 5, 5, 5, new AuthAdminSessionProperties.Cleanup(true, Duration.ofDays(365))),
                 adminRepository,
                 sessionRepository,
                 operationLogRepository,

@@ -2,10 +2,24 @@ server:
   port: 8088
   servlet:
     context-path: /langora
+  forward-headers-strategy: native
+  tomcat:
+    remoteip:
+      port-header: X-Forwarded-Port
+      remote-ip-header: X-Forwarded-For
+      # Only the local cloudflared tunnel is trusted.
+      internal-proxies: '127\.0\.0\.1|::1|0:0:0:0:0:0:0:1'
 
 spring:
   config:
     import: optional:file:.env[.properties]
+
+  task:
+    scheduling:
+      thread-name-prefix: "langora-task-"
+      shutdown:
+        await-termination: true
+        await-termination-period: 1m
 
   application:
     name: Langora
@@ -24,6 +38,18 @@ langora:
       username: ${BOOTSTRAP_SUPER_ADMIN_USERNAME:SuperAdmin}
       password: ${BOOTSTRAP_SUPER_ADMIN_PASSWORD:SuperAdmin123}
       override-existing-password: ${BOOTSTRAP_SUPER_ADMIN_OVERRIDE_PASSWORD:false}
+
+
+  auth:
+    admin:
+      session:
+        cleanup:
+          enabled: true
+          retention: 365d
+        super-admin-max-session: 3
+        admin-max-session: 5
+        editor-max-session: 5
+        refresh-grace-seconds: 5
 
   security:
     jwt:

@@ -59,6 +59,7 @@ public class JwtTokenService {
                                         .issuer(jwtProperties.issuer())
                                         .issuedAt(now)
                                         .expiresAt(expiresAt)
+                                        .id(UUID.randomUUID().toString())
                                         .subject(String.valueOf(userId))
                                         .claim(UserJwtPayload.CLAIM_NAME_SESSION_ID, sessionId)
                                         .build()

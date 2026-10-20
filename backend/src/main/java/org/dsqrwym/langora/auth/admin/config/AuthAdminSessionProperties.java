@@ -6,20 +6,29 @@ import jakarta.validation.constraints.Positive;
 import org.dsqrwym.langora.infrastructure.jooq.enums.AdminUserRole;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+import java.time.Duration;
+
 @Valid
 @ConfigurationProperties(prefix = "langora.auth.admin.session")
-public record AdminSessionProperties(
+public record AuthAdminSessionProperties(
         @Positive Integer superAdminMaxSession,
         @Positive Integer adminMaxSession,
         @Positive Integer editorMaxSession,
-        @Min(0)
-        Integer refreshGraceSeconds
+        @Min(0) Integer refreshGraceSeconds,
+        Cleanup cleanup
 ) {
-    public AdminSessionProperties {
+    public AuthAdminSessionProperties {
         if (superAdminMaxSession == null) superAdminMaxSession = 3;
         if (adminMaxSession == null) adminMaxSession = 5;
         if (editorMaxSession == null) editorMaxSession = 5;
         if (refreshGraceSeconds == null) refreshGraceSeconds = 5;
+        if (cleanup == null) cleanup = new Cleanup(true, null);
+    }
+
+    public record Cleanup(boolean enabled, Duration retention) {
+        public Cleanup {
+            if (retention == null) retention = Duration.ofDays(365);
+        }
     }
 
     public Integer getMaxSessionByRole(AdminUserRole role) {
@@ -27,7 +36,6 @@ public record AdminSessionProperties(
             case SUPER_ADMIN -> superAdminMaxSession;
             case ADMIN -> adminMaxSession;
             case EDITOR -> editorMaxSession;
-            default -> throw new IllegalArgumentException("Invalid role");
         };
     }
 }
