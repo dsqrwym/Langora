@@ -11,12 +11,14 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 
 import java.sql.Connection;
 import java.time.Duration;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 
 /**
  * Permit pairing for the statement-level gate: every {@code acquire()} that succeeds must be
@@ -101,5 +103,129 @@ class BulkheadConnectionProviderTest {
         } finally {
             TransactionSynchronizationManager.setActualTransactionActive(false);
         }
+    }
+
+    @Test
+    void doesNotReturnAPermitWhenAStatementCompletesInsideATransaction() {
+        Bulkhead bulkhead = bulkhead(1);
+        Connection connection = mock(Connection.class);
+        given(delegate.acquire()).willReturn(connection);
+        BulkheadConnectionProvider provider = new BulkheadConnectionProvider(delegate, bulkhead);
+
+        TransactionSynchronizationManager.setActualTransactionActive(true);
+        try {
+            provider.release(provider.acquire());
+        } finally {
+            TransactionSynchronizationManager.setActualTransactionActive(false);
+        }
+
+        // Regression: release() used to call onComplete() unconditionally, so this was 2.
+        assertThat(bulkhead.getMetrics().getAvailableConcurrentCalls()).isEqualTo(1);
+    }
+
+    @Test
+    void manyStatementsInsideOneTransactionLeaveThePermitCountUnchanged() {
+        Bulkhead bulkhead = bulkhead(2);
+        Connection connection = mock(Connection.class);
+        given(delegate.acquire()).willReturn(connection);
+        BulkheadConnectionProvider provider = new BulkheadConnectionProvider(delegate, bulkhead);
+
+        TransactionSynchronizationManager.setActualTransactionActive(true);
+        try {
+            for (int statement = 0; statement < 100; statement++) {
+                provider.release(provider.acquire());
+            }
+        } finally {
+            TransactionSynchronizationManager.setActualTransactionActive(false);
+        }
+
+        assertThat(bulkhead.getMetrics().getAvailableConcurrentCalls()).isEqualTo(2);
+    }
+
+    @Test
+    void keepsRejectingAfterManyStatementsInsideTransactions() {
+        Bulkhead bulkhead = bulkhead(1);
+        Connection connection = mock(Connection.class);
+        given(delegate.acquire()).willReturn(connection);
+        BulkheadConnectionProvider provider = new BulkheadConnectionProvider(delegate, bulkhead);
+
+        TransactionSynchronizationManager.setActualTransactionActive(true);
+        try {
+            for (int statement = 0; statement < 100; statement++) {
+                provider.release(provider.acquire());
+            }
+        } finally {
+            TransactionSynchronizationManager.setActualTransactionActive(false);
+        }
+
+        // The single permit is still the only one in existence.
+        assertThat(bulkhead.tryAcquirePermission()).isTrue();
+        assertThatThrownBy(provider::acquire).isInstanceOf(RateLimitedException.class);
+    }
+
+    @Test
+    void returnsOnlyOnePermitWhenTheSameConnectionIsReleasedTwice() {
+        Bulkhead bulkhead = bulkhead(1);
+        Connection connection = mock(Connection.class);
+        given(delegate.acquire()).willReturn(connection);
+        BulkheadConnectionProvider provider = new BulkheadConnectionProvider(delegate, bulkhead);
+
+        Connection acquired = provider.acquire();
+        provider.release(acquired);
+        provider.release(acquired);
+
+        assertThat(bulkhead.getMetrics().getAvailableConcurrentCalls()).isEqualTo(1);
+        then(delegate).should(times(2)).release(connection);
+    }
+
+    @Test
+    void returnsThePermitEvenWhenTheConnectionIsReleasedAfterTheTransactionEnded() {
+        Bulkhead bulkhead = bulkhead(2);
+        Connection connection = mock(Connection.class);
+        given(delegate.acquire()).willReturn(connection);
+        BulkheadConnectionProvider provider = new BulkheadConnectionProvider(delegate, bulkhead);
+
+        Connection acquired = provider.acquire();
+        assertThat(bulkhead.getMetrics().getAvailableConcurrentCalls()).isEqualTo(1);
+
+        TransactionSynchronizationManager.setActualTransactionActive(true);
+        try {
+            provider.release(acquired);
+        } finally {
+            TransactionSynchronizationManager.setActualTransactionActive(false);
+        }
+
+        // The ledger, not the ambient transaction state, decides whether a permit is returned. An
+        // implementation that mirrors the acquire-side transaction check would lose this permit.
+        assertThat(bulkhead.getMetrics().getAvailableConcurrentCalls()).isEqualTo(2);
+    }
+
+    @Test
+    void publishesOneFinishedEventForEveryPermittedEvent() {
+        Bulkhead bulkhead = bulkhead(4);
+        Connection connection = mock(Connection.class);
+        given(delegate.acquire()).willReturn(connection);
+        BulkheadConnectionProvider provider = new BulkheadConnectionProvider(delegate, bulkhead);
+
+        AtomicInteger permitted = new AtomicInteger();
+        AtomicInteger finished = new AtomicInteger();
+        bulkhead.getEventPublisher()
+                .onCallPermitted(_ -> permitted.incrementAndGet())
+                .onCallFinished(_ -> finished.incrementAndGet());
+
+        provider.release(provider.acquire());
+        provider.release(provider.acquire());
+
+        TransactionSynchronizationManager.setActualTransactionActive(true);
+        try {
+            for (int statement = 0; statement < 5; statement++) {
+                provider.release(provider.acquire());
+            }
+        } finally {
+            TransactionSynchronizationManager.setActualTransactionActive(false);
+        }
+
+        assertThat(permitted).hasValue(2);
+        assertThat(finished).hasValue(2);
     }
 }
