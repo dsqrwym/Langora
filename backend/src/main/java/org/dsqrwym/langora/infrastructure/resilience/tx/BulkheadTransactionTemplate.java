@@ -2,6 +2,7 @@ package org.dsqrwym.langora.infrastructure.resilience.tx;
 
 import io.github.resilience4j.bulkhead.Bulkhead;
 import org.dsqrwym.langora.infrastructure.web.exception.RateLimitedException;
+import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionException;
@@ -25,7 +26,7 @@ public class BulkheadTransactionTemplate extends TransactionTemplate {
     }
 
     @Override
-    public <T> @Nullable T execute(TransactionCallback<T> action) throws TransactionException {
+    public <T extends @Nullable Object> T execute(@NonNull TransactionCallback<T> action) throws TransactionException {
         // Joining an outer transaction (PROPAGATION_REQUIRED): it already owns the permit.
         if (TransactionSynchronizationManager.isActualTransactionActive()) {
             return super.execute(action);
