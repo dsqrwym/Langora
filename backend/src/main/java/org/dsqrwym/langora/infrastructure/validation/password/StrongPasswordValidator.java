@@ -6,7 +6,12 @@ import jakarta.validation.ConstraintValidatorContext;
 import java.nio.charset.StandardCharsets;
 
 /**
- * Validates a password based on the specified criteria except null.
+ * Validates a password against the configured criteria. Only {@code null} is treated as "not provided"
+ * and skipped; a blank value is a provided-but-invalid password and is rejected.
+ *
+ * <p>Presence is the responsibility of {@code @NotBlank} (or of the cross-field constraint when the
+ * value is optional); configuration sources that use empty placeholders should normalise them to
+ * {@code null} before this constraint runs.
  */
 public class StrongPasswordValidator implements ConstraintValidator<StrongPassword, String> {
     private int minLength;
