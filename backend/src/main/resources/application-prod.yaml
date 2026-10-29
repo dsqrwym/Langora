@@ -1,12 +1,15 @@
 spring:
   datasource:
-    url: ${DB_URL}
-    username: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
-
     hikari:
-      maximum-pool-size: 20
+      maximum-pool-size: 12
       minimum-idle: 0
+      connection-timeout: 3000
+      # Hikari：validation-timeout < connection-timeout
+      validation-timeout: 2000
+      # Neon「5 分钟无活跃查询则挂起对齐，让客户端先关掉即将失效的连接
+      idle-timeout: 298000
+      data-source-properties:
+        ApplicationName: langora
 
 springdoc:
   swagger-ui:
@@ -15,6 +18,17 @@ springdoc:
     enabled: false
 
 langora:
+  bootstrap:
+    super-admin:
+      # Production ships no default credentials. Enable bootstrap explicitly and supply
+      # all three values through the environment. While enabled=false the empty values
+      # below are accepted; enabling it without credentials fails startup validation.
+      enabled: ${BOOTSTRAP_SUPER_ADMIN_ENABLED:false}
+      email: "${BOOTSTRAP_SUPER_ADMIN_EMAIL}"
+      username: "${BOOTSTRAP_SUPER_ADMIN_USERNAME}"
+      password: "${BOOTSTRAP_SUPER_ADMIN_PASSWORD}"
+      override-existing-password: ${BOOTSTRAP_SUPER_ADMIN_OVERRIDE_PASSWORD:false}
+
   security:
     cookie:
       domain: ".domain.es"  # 允许跨子域名共享

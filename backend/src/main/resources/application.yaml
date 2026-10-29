@@ -1,4 +1,7 @@
 server:
+  # Only the local cloudflared tunnel may reach the application. Override with
+  # SERVER_ADDRESS=0.0.0.0 when running inside a container.
+  address: ${SERVER_ADDRESS:127.0.0.1}
   port: 8088
   servlet:
     context-path: /langora
@@ -7,15 +10,24 @@ server:
     remoteip:
       port-header: X-Forwarded-Port
       remote-ip-header: X-Forwarded-For
-      # Only the local cloudflared tunnel is trusted.
-      internal-proxies: '127\.0\.0\.1|::1|0:0:0:0:0:0:0:1'
+      # CIDR syntax (Tomcat 11; regex support is removed in Tomcat 12).
+      # Only the local cloudflared tunnel is trusted. Add the Docker bridge
+      # subnet (e.g. 172.17.0.0/16) only if cloudflared cannot use host networking.
+      internal-proxies: "127.0.0.0/8,::1/128"
 
 spring:
   config:
     import: optional:file:.env[.properties]
 
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+
   task:
     scheduling:
+      # Boot 4.1+: with virtual threads enabled the default TaskScheduler is a SimpleAsyncTaskScheduler backed by virtual threads;
+      # Boot 4.1+：开启虚拟线程后默认调度器是虚拟线程的 SimpleAsyncTaskScheduler； 用 simple.concurrency-limit 限制并发。只有平台模式才使用 pool.size。
       thread-name-prefix: "langora-task-"
       shutdown:
         await-termination: true
@@ -30,15 +42,6 @@ spring:
       enabled: true
 
 langora:
-  bootstrap:
-    super-admin:
-      # Whether to bootstrap the super admin initial data
-      enabled: ${BOOTSTRAP_SUPER_ADMIN_ENABLED:true}
-      email: ${BOOTSTRAP_SUPER_ADMIN_EMAIL:superadmin@langora.com}
-      username: ${BOOTSTRAP_SUPER_ADMIN_USERNAME:SuperAdmin}
-      password: ${BOOTSTRAP_SUPER_ADMIN_PASSWORD:SuperAdmin123}
-      override-existing-password: ${BOOTSTRAP_SUPER_ADMIN_OVERRIDE_PASSWORD:false}
-
 
   auth:
     admin:
@@ -46,6 +49,8 @@ langora:
         cleanup:
           enabled: true
           retention: 365d
+          batch-size: 1000
+          zone: Europe/Madrid
         super-admin-max-session: 3
         admin-max-session: 5
         editor-max-session: 5
@@ -53,8 +58,7 @@ langora:
 
   security:
     jwt:
-      access-token-expiration: 15m
-      refresh-token-expiration: 1d
+      # Token TTLs default to 15m / 1d in JwtProperties (@DefaultValue); override per environment.
       secret-key: ${JWT_SECRET_KEY}
 
     cookie:
@@ -62,6 +66,13 @@ langora:
 
     csrf:
       secret-key: ${CSRF_SECRET_KEY}
+
+logging:
+  pattern:
+    # TraceFilter puts the request trace id in MDC and ApiResponse returns the same value in the body,
+    # so every log line of a request can be matched with the response the client received.
+    # Threads outside a request (startup, scheduled tasks) have none and render '-'.
+    level: "%5p [%X{requestId:--}]"
 
 springdoc:
   api-docs:

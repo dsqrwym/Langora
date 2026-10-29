@@ -11,5 +11,8 @@ langora:
       access-token-expiration: 15m
       refresh-token-expiration: 1d
       secret-key: test-only-jwt-secret-key-must-be-at-least-32-chars
+    cors:
+      allowed-origins:
+        - "http://127.0.0.1:5173"
     csrf:
       secret-key: test-only-csrf-secret-key-must-be-at-least-32-chars
