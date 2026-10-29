@@ -32,6 +32,9 @@ public class SuperAdminBootstrapRunner implements ApplicationRunner {
     public void run(@NonNull ApplicationArguments args) {
         if (!properties.enabled()) {
             log.info("[Boostrap] Super admin bootstrap is disabled by configuration");
+            if (properties.credentialsIgnored()) {
+                log.warn("[Bootstrap] Super admin bootstrap is disabled, ignoring the configured credentials");
+            }
             return;
         }
 

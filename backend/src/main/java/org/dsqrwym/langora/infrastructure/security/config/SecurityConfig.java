@@ -3,12 +3,10 @@ package org.dsqrwym.langora.infrastructure.security.config;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.dsqrwym.langora.auth.jwt.UserJwtAuthenticationConverter;
-import org.dsqrwym.langora.infrastructure.security.properties.CookieProperties;
 import org.dsqrwym.langora.infrastructure.security.properties.CorsProperties;
 import org.dsqrwym.langora.infrastructure.web.ApiResponse;
 import org.dsqrwym.langora.infrastructure.web.ErrorCode;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
@@ -34,7 +32,6 @@ import java.io.IOException;
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity // Enable @PreAuthorize
-@EnableConfigurationProperties({CookieProperties.class, CorsProperties.class})
 @RequiredArgsConstructor
 public class SecurityConfig {
     private final UserJwtAuthenticationConverter authenticationConverter;
