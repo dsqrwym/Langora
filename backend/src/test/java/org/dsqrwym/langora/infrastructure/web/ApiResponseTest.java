@@ -15,7 +15,7 @@ class ApiResponseTest {
 
     @Test
     void successResponseCarriesTraceIdAndStableCode() {
-        MDC.put(ApiResponse.TRACE_ID_KEY, "trace-1");
+        MDC.put(ApiResponse.REQUEST_ID_KEY, "trace-1");
 
         ApiResponse<String> response = ApiResponse.ok("payload");
 

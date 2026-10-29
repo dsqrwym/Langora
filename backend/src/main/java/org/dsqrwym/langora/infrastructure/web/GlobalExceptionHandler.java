@@ -28,6 +28,8 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     /**
      * Cath all exceptions for Spring MVC built-ins.
+     * <p>
+     * 统一处理 Spring MVC 内置异常，转换成 ApiResponse 错误契约。
      *
      * @param ex      the exception to handle
      * @param headers the headers to be written to the response
@@ -50,6 +52,8 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     /**
      * Bean Validation on @RequestBody
      * data: {"field": "field_name", "code": "VALIDATION_*"}
+     * <p>
+     * 处理 @RequestBody 的 Bean Validation 失败。
      *
      * @param ex      the exception to handle
      * @param headers the headers to be written to the response
@@ -74,6 +78,8 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     /**
      * RequestParam, PathVariable validation
+     * <p>
+     * 处理 @RequestParam / @PathVariable 等方法参数校验失败。
      *
      * @param ex      the exception to handle
      * @param headers the headers to be written to the response
@@ -98,6 +104,8 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     /**
      * Method level validation @Validated
+     * <p>
+     * 处理 @Validated 方法级校验失败。
      */
     @ExceptionHandler(ConstraintViolationException.class)
     public ResponseEntity<ApiResponse<Object>> onConstraintViolation(ConstraintViolationException ex) {
@@ -116,6 +124,8 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     /**
      * Business exception
      *
+     * 处理业务异常（4xx），直接使用异常携带的 status/code。
+     *
      * @param ex the exception to handle
      * @return the response entity
      */
@@ -128,6 +138,8 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     /**
      * Access denied throw from controllers
+     * <p>
+     * 处理控制器抛出的权限不足异常。
      *
      * @param ex the exception to handle
      * @return the response entity
