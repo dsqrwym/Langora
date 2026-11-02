@@ -21,25 +21,13 @@ public final class TextUtils {
     }
 
     /**
-     * Check the input string and return the default value if it is null.
-     *
-     * @param input        the input string
-     * @param defaultValue the default value
-     * @return the input string if it is not null, otherwise the default value
-     */
-    public @NotNull
-    static String defaultIfNull(String input, String defaultValue) {
-        return input != null ? input : defaultValue;
-    }
-
-    /**
      * Check the input string and return the default value if it is blank.
      *
      * @param input        the input string
      * @param defaultValue the default value
      * @return the input string if it is not blank, otherwise the default value
      */
-    public static String defaultIfBlank(String input, String defaultValue) {
+    public static String defaultIfBlank(String input, @NotNull String defaultValue) {
         return input != null && !input.isBlank() ? input : defaultValue;
     }
 

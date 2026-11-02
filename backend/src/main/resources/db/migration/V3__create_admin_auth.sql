@@ -127,6 +127,10 @@ CREATE INDEX idx_admin_user_sessions_user_last_active
 CREATE INDEX idx_admin_user_sessions_expires_at
     ON admin_user_sessions (expires_at);
 
+CREATE INDEX idx_admin_user_sessions_revoked_at
+    ON admin_user_sessions (revoked_at)
+    WHERE revoked_at IS NOT NULL;
+
 CREATE UNIQUE INDEX uq_admin_user_sessions_prev_refresh_token_hash
     ON admin_user_sessions (previous_refresh_token_hash)
     WHERE previous_refresh_token_hash IS NOT NULL;

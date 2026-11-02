@@ -14,6 +14,8 @@ server:
       # Only the local cloudflared tunnel is trusted. Add the Docker bridge
       # subnet (e.g. 172.17.0.0/16) only if cloudflared cannot use host networking.
       internal-proxies: "127.0.0.0/8,::1/128"
+    # 100 -> 1000 取消每一百次一次硬重置以提升性能，对其 nginx 的 1000
+    max-keep-alive-requests: 1000
 
 spring:
   config:
@@ -23,6 +25,13 @@ spring:
     url: ${DB_URL}
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
+
+  data:
+    redis:
+      host: ${REDIS_HOST:127.0.0.1}
+      port: ${REDIS_PORT:6379}
+      timeout: 500ms
+      connect-timeout: 500ms
 
   task:
     scheduling:
@@ -36,7 +45,7 @@ spring:
   application:
     name: Langora
   profiles:
-    active: dev
+    active: ${ENV}
   threads:
     virtual:
       enabled: true
@@ -57,6 +66,15 @@ langora:
         refresh-grace-seconds: 5
 
   security:
+    login-attempt:
+      store: ${LOGIN_ATTEMPT_STORE:memory}
+      captcha-threshold: 3
+      ip-block-threshold: 20
+      account-block-threshold: 5
+      window: 15m
+      max-local-entries: 50000
+      cleanup-interval: 5m
+      redis-degraded-cooldown: 30s
     jwt:
       # Token TTLs default to 15m / 1d in JwtProperties (@DefaultValue); override per environment.
       secret-key: ${JWT_SECRET_KEY}

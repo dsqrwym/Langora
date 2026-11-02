@@ -28,13 +28,66 @@
     </scm>
 
     <properties>
-        <java.version>25</java.version>
+        <!-- Source/target 21: the bytecode stays runnable on any JDK 21+, including the JDK 25 LTS runtime. -->
+        <java.version>21</java.version>
         <resilience4j.version>2.4.0</resilience4j.version>
         <!-- 1.x retains the org.testcontainers.containers.* API used by the integration tests. -->
         <testcontainers.version>1.21.4</testcontainers.version>
+        <!-- Boot 4.1.1 pins Tomcat 11.0.24; the 11.0.25 line fixes CVE-2026-65637/65182/65905/68525. -->
+        <tomcat.version>11.0.27</tomcat.version>
+        <!-- Boot pins 42.7.13; 42.7.14 fixes CVE-2026-107314 and CVE-2026-107315. -->
+        <postgresql.version>42.7.14</postgresql.version>
+        <!-- Boot pins 1.5.38, the last 1.5 release. CVE-2026-19880 is fixed in 1.6.3 and the incomplete
+             fix (CVE-2026-104721) in 1.6.5, so the 1.6.x line is required. 1.6.0 already targets SLF4J 2.0.18. -->
+        <logback.version>1.6.6</logback.version>
     </properties>
 
+    <dependencyManagement>
+        <dependencies>
+            <!--
+                Two separate Jackson BOMs, told apart by groupId rather than by a version-suffixed property:
+                - com.fasterxml.jackson = Jackson 2 (legacy line, pulled in by springdoc/swagger-core)
+                - tools.jackson         = Jackson 3 (current line, pulled in by Flyway and Spring Boot)
+                Boot 4.1.1 pins 2.21.5 / 3.1.5; 2.21.8 / 3.1.8 carry the CVE-2026-110879 fix.
+            -->
+            <!-- Jackson 2 line -->
+            <dependency>
+                <groupId>com.fasterxml.jackson</groupId>
+                <artifactId>jackson-bom</artifactId>
+                <version>2.21.8</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <!-- Jackson 3 line -->
+            <dependency>
+                <groupId>tools.jackson</groupId>
+                <artifactId>jackson-bom</artifactId>
+                <version>3.1.8</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <!-- Test classpath only (via Testcontainers 1.x); fixes CVE-2024-25710 and CVE-2024-26308. -->
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-compress</artifactId>
+                <version>1.28.0</version>
+            </dependency>
+            <!-- Test classpath only (via json-smart -> accessors-smart); the ASM CVEs are fixed in 9.11+. -->
+            <dependency>
+                <groupId>org.ow2.asm</groupId>
+                <artifactId>asm</artifactId>
+                <version>9.11.1</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <dependencies>
+        <!-- Redis 仅 store=redis 时需要；编译期需要，因为 Redis 实现引用了 StringRedisTemplate -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
+
         <!-- resilience4j only bulkhead -->
         <dependency>
             <groupId>io.github.resilience4j</groupId>
@@ -115,14 +168,14 @@
             <groupId>org.flywaydb</groupId>
             <artifactId>flyway-database-postgresql</artifactId>
         </dependency>
-
+        <!--
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-devtools</artifactId>
             <scope>runtime</scope>
             <optional>true</optional>
         </dependency>
-
+        -->
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
@@ -202,6 +255,13 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>process-aot</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -297,11 +357,28 @@
                     <dependency>
                         <groupId>org.postgresql</groupId>
                         <artifactId>postgresql</artifactId>
-                        <version>42.7.5</version>
+                        <version>${postgresql.version}</version>
                     </dependency>
                 </dependencies>
             </plugin>
         </plugins>
     </build>
 
+    <profiles>
+        <profile>
+            <!-- 默认激活：日常开发与 IDE 运行保留 devtools 热重启。 -->
+            <id>devtools</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-devtools</artifactId>
+                    <scope>runtime</scope>
+                    <optional>true</optional>
+                </dependency>
+            </dependencies>
+        </profile>
+    </profiles>
 </project>

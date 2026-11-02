@@ -37,6 +37,10 @@ class AuthCsrfServiceTest {
 
         assertFalse(service.validateCsrfToken(sessionId, null));
         assertFalse(service.validateCsrfToken(sessionId, " "));
-        assertFalse(service.validateCsrfToken(sessionId, token.substring(0, token.length() - 1) + "0"));
+
+        // Flip the last hex digit so the tampered token is guaranteed to differ from the original.
+        char last = token.charAt(token.length() - 1);
+        String tampered = token.substring(0, token.length() - 1) + (last == '0' ? '1' : '0');
+        assertFalse(service.validateCsrfToken(sessionId, tampered));
     }
 }

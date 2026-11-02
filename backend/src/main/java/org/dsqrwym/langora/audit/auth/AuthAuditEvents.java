@@ -1,6 +1,7 @@
 package org.dsqrwym.langora.audit.auth;
 
 import org.dsqrwym.langora.audit.OperationDto;
+import org.dsqrwym.langora.infrastructure.jooq.enums.AdminSessionRevocationReason;
 import org.dsqrwym.langora.infrastructure.jooq.enums.OperationLogAction;
 import org.dsqrwym.langora.infrastructure.jooq.enums.OperationLogActorType;
 import org.dsqrwym.langora.infrastructure.jooq.enums.OperationLogResourceType;
@@ -17,6 +18,8 @@ public class AuthAuditEvents {
      * Creates an audit event for an administrator login.
      * The actor is the administrator who logged in, and the resource
      * is the session created for the login.
+     *
+     * 为管理员登录创建审计事件：actor 是登录者，resource 是本次创建的会话。
      *
      * @param userId     ID of the administrator who logged in, used as the actor ID
      * @param username   Username of the administrator, used as the actor display name
@@ -49,31 +52,35 @@ public class AuthAuditEvents {
     }
 
     /**
-     * Detects refresh token reuse outside the grace period.
-     * The actor is SYSTEM because the reuse is detected automatically,
-     * and the target is the account potentially compromised.
+     * Records an automatic revocation of every active session of an account.
+     * Used when a rotated refresh token is replayed (possible theft) or when a
+     * disabled account still presents a usable refresh token.
      *
-     * @param victimUserId            ID of the potentially compromised account
-     * @param victimUsername          Username of the affected account, used as the target display name
-     * @param reusedSessionId         ID of the reused session, used as the resource ID
-     * @param reusedSessionDeviceName Device name of the reused session, used as the resource display name
-     * @param revokedSessionCount     Number of sessions revoked in this operation
-     *                                (all active sessions belonging to the affected user)
-     * @param secondsSinceLastActive  Number of seconds by which the reuse occurred after the last active;
-     *                                useful for distinguishing an actual attack from a network retry or replay
-     * @param attackerIp              IP address from which the reuse request originated
-     * @param attackerUserAgent       User-Agent header of the request that triggered the detection
-     * @param detectedAt              Timestamp when the reuse was detected
+     * 记录一次“自动撤销账号全部会话”的安全事件；用于刷新 token 重放
+     * 或停用账号仍持有可用 refresh token 的场景。
+     *
+     * @param userId                 ID of the account whose sessions were revoked
+     * @param username               username of the affected account
+     * @param triggerSessionId       session that triggered the revocation
+     * @param triggerDeviceName      device name of the triggering session
+     * @param reason                 why the sessions were revoked
+     * @param revokedSessionCount    number of sessions revoked in this operation
+     * @param secondsSinceLastActive time since the session was last active,
+     *                               or {@code null} when not applicable
+     * @param ipAddress              IP of the request that triggered the revocation
+     * @param userAgent              User-Agent of the request that triggered the revocation
+     * @param detectedAt             timestamp of the detection
      */
-    public static OperationDto tokenReuseDetected(
-            Long victimUserId,
-            String victimUsername,
-            UUID reusedSessionId,
-            String reusedSessionDeviceName,
+    public static @NonNull OperationDto sessionsRevoked(
+            Long userId,
+            String username,
+            UUID triggerSessionId,
+            String triggerDeviceName,
+            AdminSessionRevocationReason reason,
             int revokedSessionCount,
-            long secondsSinceLastActive,
-            String attackerIp,
-            String attackerUserAgent,
+            Long secondsSinceLastActive,
+            String ipAddress,
+            String userAgent,
             Instant detectedAt
     ) {
         OperationDto dto = OperationDto.system(
@@ -82,23 +89,28 @@ public class AuthAuditEvents {
                 detectedAt
         );
 
-        dto.setResourceId(reusedSessionId.toString());
-        dto.setResourceDisplayName(reusedSessionDeviceName);
+        dto.setResourceId(triggerSessionId.toString());
+        dto.setResourceDisplayName(triggerDeviceName);
 
         dto.setTargetType(OperationLogActorType.ADMIN);
-        dto.setTargetId(victimUserId.toString());
-        dto.setTargetDisplayName(victimUsername);
+        dto.setTargetId(userId.toString());
+        dto.setTargetDisplayName(username);
 
         dto.setAfterData(org.jooq.JSONB.jsonb("""
-                {
-                  "reason": "TOKEN_REUSE_DETECTED",
-                  "revokedSessionCount": %d,
-                  "secondsSinceLastActive": %d
-                }
-                """.formatted(revokedSessionCount, secondsSinceLastActive)));
+                        {
+                          "reason": "%s",
+                          "revokedSessionCount": %d,
+                          "secondsSinceLastActive": %s
+                        }
+                        """.formatted(
+                        reason.name(),
+                        revokedSessionCount,
+                        secondsSinceLastActive == null ? "null" : secondsSinceLastActive.toString()
+                )
+        ));
 
-        dto.setIpAddress(attackerIp);
-        dto.setUserAgent(attackerUserAgent);
+        dto.setIpAddress(ipAddress);
+        dto.setUserAgent(userAgent);
 
         return dto;
     }
@@ -106,11 +118,13 @@ public class AuthAuditEvents {
     /**
      * Creates an audit event for an administrator logout.
      *
-     * @param userId    ID of the administrator who logged out
-     * @param username  Username of the administrator
-     * @param sessionId ID of the session that was revoked
-     * @param ipAddress IP of the logout request
-     * @param userAgent User-Agent of the logout request
+     * 为管理员登出创建审计事件。
+     *
+     * @param userId     ID of the administrator who logged out
+     * @param username   Username of the administrator
+     * @param sessionId  ID of the session that was revoked
+     * @param ipAddress  IP of the logout request
+     * @param userAgent  User-Agent of the logout request
      * @param logoutTime Timestamp of the logout
      */
     public static @NonNull OperationDto adminLogout(

@@ -231,9 +231,11 @@ public class NativeRuntimeHintsConfig {
             "org.dsqrwym.langora.auth.dto.LoginRequestDto",
             "org.dsqrwym.langora.auth.dto.LoginResponseDto",
             "org.dsqrwym.langora.auth.dto.RefreshTokenResponse",
+            "org.dsqrwym.langora.auth.dto.CaptchaConfigResponse",
             "org.dsqrwym.langora.infrastructure.web.ApiResponse",
             "org.dsqrwym.langora.infrastructure.web.dto.ParamErrorDetail",
             "org.dsqrwym.langora.infrastructure.web.dto.ValidationErrorDetail",
+            "org.dsqrwym.langora.infrastructure.security.captcha.TurnstileResponse",
     };
 
     public static class AppRuntimeHintsRegistrar implements RuntimeHintsRegistrar {

@@ -12,5 +12,55 @@
     "allPublicConstructors": true,
     "allDeclaredMethods": true,
     "allPublicMethods": true
+  },
+  {
+    "name": "org.dsqrwym.langora.auth.admin.config.AuthAdminSessionProperties",
+    "allDeclaredFields": true,
+    "allDeclaredMethods": true
+  },
+  {
+    "name": "org.dsqrwym.langora.auth.admin.config.AuthAdminSessionProperties$Cleanup",
+    "allDeclaredFields": true,
+    "allDeclaredMethods": true
+  },
+  {
+    "name": "org.dsqrwym.langora.infrastructure.bootstrap.SuperAdminBootstrapProperties",
+    "allDeclaredFields": true,
+    "allDeclaredMethods": true
+  },
+  {
+    "name": "org.dsqrwym.langora.infrastructure.resilience.DbBulkheadProperties",
+    "allDeclaredFields": true,
+    "allDeclaredMethods": true
+  },
+  {
+    "name": "org.dsqrwym.langora.infrastructure.security.login.LoginAttemptProperties",
+    "allDeclaredFields": true,
+    "allDeclaredMethods": true
+  },
+  {
+    "name": "org.dsqrwym.langora.infrastructure.security.captcha.CaptchaProperties",
+    "allDeclaredFields": true,
+    "allDeclaredMethods": true
+  },
+  {
+    "name": "org.dsqrwym.langora.infrastructure.security.properties.CookieProperties",
+    "allDeclaredFields": true,
+    "allDeclaredMethods": true
+  },
+  {
+    "name": "org.dsqrwym.langora.infrastructure.security.properties.CorsProperties",
+    "allDeclaredFields": true,
+    "allDeclaredMethods": true
+  },
+  {
+    "name": "org.dsqrwym.langora.infrastructure.security.properties.CsrfProperties",
+    "allDeclaredFields": true,
+    "allDeclaredMethods": true
+  },
+  {
+    "name": "org.dsqrwym.langora.infrastructure.security.properties.JwtProperties",
+    "allDeclaredFields": true,
+    "allDeclaredMethods": true
   }
 ]

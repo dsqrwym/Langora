@@ -1,6 +1,7 @@
 package org.dsqrwym.langora.auth.admin.service;
 
 import org.dsqrwym.langora.audit.OperationLogRepository;
+import org.dsqrwym.langora.auth.UserTypes;
 import org.dsqrwym.langora.auth.admin.config.AuthAdminSessionProperties;
 import org.dsqrwym.langora.auth.admin.repository.AuthAdminRepository;
 import org.dsqrwym.langora.auth.admin.repository.AuthAdminSessionRepository;
@@ -13,10 +14,15 @@ import org.dsqrwym.langora.infrastructure.jooq.enums.AdminSessionRevocationReaso
 import org.dsqrwym.langora.infrastructure.jooq.enums.AdminUserRole;
 import org.dsqrwym.langora.infrastructure.jooq.enums.AdminUserStatus;
 import org.dsqrwym.langora.infrastructure.security.TimingAttackMitigation;
+import org.dsqrwym.langora.infrastructure.security.captcha.verifier.CaptchaVerifier;
+import org.dsqrwym.langora.infrastructure.security.login.LoginAttemptAccountKey;
+import org.dsqrwym.langora.infrastructure.security.login.LoginAttemptService;
 import org.dsqrwym.langora.infrastructure.util.HashUtils;
 import org.dsqrwym.langora.infrastructure.web.ErrorCode;
+import org.dsqrwym.langora.infrastructure.web.exception.CaptchaException;
 import org.dsqrwym.langora.infrastructure.web.exception.ConflictException;
 import org.dsqrwym.langora.infrastructure.web.exception.ForbiddenException;
+import org.dsqrwym.langora.infrastructure.web.exception.RateLimitedException;
 import org.dsqrwym.langora.infrastructure.web.exception.UnauthorizedException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -34,6 +40,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Consumer;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -43,6 +50,8 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 
@@ -66,6 +75,10 @@ class AuthAdminServiceTest {
     private JwtTokenService jwtTokenService;
     @Mock
     private TimingAttackMitigation timingAttackMitigation;
+    @Mock
+    private LoginAttemptService loginAttemptService;
+    @Mock
+    private CaptchaVerifier captchaVerifier;
 
     private AuthAdminService service;
 
@@ -73,13 +86,16 @@ class AuthAdminServiceTest {
     void setUp() {
         service = new AuthAdminService(
                 transactionTemplate,
-                new AuthAdminSessionProperties(3, 5, 5, 5, new AuthAdminSessionProperties.Cleanup(true, Duration.ofDays(365))),
+                new AuthAdminSessionProperties(3, 5, 5, 5,
+                        new AuthAdminSessionProperties.Cleanup(true, Duration.ofDays(365), 1000, "Europe/Madrid")),
                 adminRepository,
                 sessionRepository,
                 operationLogRepository,
                 passwordEncoder,
                 jwtTokenService,
-                timingAttackMitigation
+                timingAttackMitigation,
+                loginAttemptService,
+                captchaVerifier
         );
 
     }
@@ -95,6 +111,8 @@ class AuthAdminServiceTest {
 
         assertEquals(ErrorCode.AUTH_INVALID_CREDENTIALS, exception.code);
         then(passwordEncoder).should().matches("password", "dummy-hash");
+        then(loginAttemptService).should().recordIpFailure("127.0.0.1");
+        then(loginAttemptService).should(never()).recordAccountFailure(any());
         then(sessionRepository).shouldHaveNoInteractions();
         then(operationLogRepository).shouldHaveNoInteractions();
     }
@@ -109,6 +127,9 @@ class AuthAdminServiceTest {
                 () -> service.login(request, "127.0.0.1", "ua", "device"));
 
         assertEquals(ErrorCode.AUTH_INVALID_CREDENTIALS, exception.code);
+        then(loginAttemptService).should().recordAccountFailure(adminKey(USER_ID));
+        then(loginAttemptService).should().recordIpFailure("127.0.0.1");
+        then(loginAttemptService).should(never()).clearAccount(any());
         then(sessionRepository).shouldHaveNoInteractions();
         then(operationLogRepository).shouldHaveNoInteractions();
     }
@@ -131,6 +152,9 @@ class AuthAdminServiceTest {
         executeTransactionCallbacks();
         LoginRequestDto request = loginRequest();
         given(adminRepository.findByUsernameOrEmail(request.username(), request.email())).willReturn(Optional.of(activeUser()));
+        given(adminRepository.lockAndGetAdminAuthState(USER_ID))
+                .willReturn(Optional.of(new AuthAdminRepository.LockedAdminAuthState(
+                        AdminUserStatus.ACTIVE, "stored-hash", AdminUserRole.ADMIN)));
         given(passwordEncoder.matches("password", "stored-hash")).willReturn(true);
         given(jwtTokenService.generateAccessToken(any(), any())).willReturn("access-token");
         given(jwtTokenService.generateRefreshToken(eq(USER_ID), any(UUID.class), any(Instant.class)))
@@ -146,7 +170,7 @@ class AuthAdminServiceTest {
         assertEquals(USER_ID, response.getUserId());
 
         ArgumentCaptor<UUID> sessionId = ArgumentCaptor.forClass(UUID.class);
-        then(sessionRepository).should().lockAdminUserForSessionUpdate(USER_ID);
+        then(adminRepository).should().lockAndGetAdminAuthState(USER_ID);
         then(sessionRepository).should().upsert(
                 sessionId.capture(), eq(USER_ID), eq("device-1"), eq("Windows . Chrome"),
                 eq("127.0.0.1"), eq("ua"), any(Instant.class), any(Instant.class),
@@ -156,6 +180,106 @@ class AuthAdminServiceTest {
         then(sessionRepository).should().revokeOldsSessions(eq(USER_ID), eq(5), any(Instant.class));
         then(adminRepository).should().setLastLoginAt(eq(USER_ID), any(Instant.class));
         then(operationLogRepository).should().insert(any());
+
+        // The failure counter is cleared only after the transaction callback has returned.
+        var order = inOrder(transactionTemplate, loginAttemptService);
+        order.verify(transactionTemplate).executeWithoutResult(any());
+        order.verify(loginAttemptService).clearAccount(adminKey(USER_ID));
+    }
+
+    @Test
+    void loginRequiresCaptchaBeforeLookingUpUser() {
+        LoginRequestDto request = loginRequest();
+        given(loginAttemptService.checkIp("127.0.0.1")).willReturn(true);
+        given(captchaVerifier.enabled()).willReturn(true);
+
+        CaptchaException exception = assertThrows(CaptchaException.class,
+                () -> service.login(request, "127.0.0.1", "ua", "device"));
+
+        assertEquals(ErrorCode.AUTH_CAPTCHA_REQUIRED, exception.code);
+        then(adminRepository).shouldHaveNoInteractions();
+        then(passwordEncoder).shouldHaveNoInteractions();
+        then(captchaVerifier).should(never()).verify(any(), any());
+    }
+
+    @Test
+    void loginChecksAccountLockBeforeVerifyingCaptcha() {
+        LoginRequestDto request = loginRequestWithCaptcha("token");
+        given(loginAttemptService.checkIp("127.0.0.1")).willReturn(true);
+        given(captchaVerifier.enabled()).willReturn(true);
+        given(adminRepository.findByUsernameOrEmail(request.username(), request.email()))
+                .willReturn(Optional.of(activeUser()));
+        doThrow(new RateLimitedException(Duration.ofSeconds(30)))
+                .when(loginAttemptService).checkAccount(adminKey(USER_ID));
+
+        RateLimitedException exception = assertThrows(RateLimitedException.class,
+                () -> service.login(request, "127.0.0.1", "ua", "device"));
+
+        assertEquals(30, exception.retryAfterSeconds);
+        then(captchaVerifier).should(never()).verify(any(), any());
+        then(passwordEncoder).shouldHaveNoInteractions();
+    }
+
+    @Test
+    void loginRejectsInvalidCaptchaBeforePasswordCheck() {
+        LoginRequestDto request = loginRequestWithCaptcha("token");
+        given(loginAttemptService.checkIp("127.0.0.1")).willReturn(true);
+        given(captchaVerifier.enabled()).willReturn(true);
+        given(adminRepository.findByUsernameOrEmail(request.username(), request.email()))
+                .willReturn(Optional.of(activeUser()));
+        doThrow(CaptchaException.invalid())
+                .when(captchaVerifier).verify("token", "127.0.0.1");
+
+        CaptchaException exception = assertThrows(CaptchaException.class,
+                () -> service.login(request, "127.0.0.1", "ua", "device"));
+
+        assertEquals(ErrorCode.AUTH_CAPTCHA_INVALID, exception.code);
+        then(passwordEncoder).shouldHaveNoInteractions();
+        then(loginAttemptService).should(never()).recordAccountFailure(any());
+        then(loginAttemptService).should(never()).recordIpFailure(any());
+    }
+
+    @Test
+    void loginVerifiesCaptchaForUnknownUserBeforeDummyBcrypt() {
+        LoginRequestDto request = loginRequestWithCaptcha("token");
+        given(loginAttemptService.checkIp("127.0.0.1")).willReturn(true);
+        given(captchaVerifier.enabled()).willReturn(true);
+        given(adminRepository.findByUsernameOrEmail(request.username(), request.email()))
+                .willReturn(Optional.empty());
+        given(timingAttackMitigation.getDummyPasswordHash()).willReturn("dummy-hash");
+
+        UnauthorizedException exception = assertThrows(UnauthorizedException.class,
+                () -> service.login(request, "127.0.0.1", "ua", "device"));
+
+        assertEquals(ErrorCode.AUTH_INVALID_CREDENTIALS, exception.code);
+        var order = inOrder(captchaVerifier, passwordEncoder);
+        order.verify(captchaVerifier).verify("token", "127.0.0.1");
+        order.verify(passwordEncoder).matches("password", "dummy-hash");
+        then(loginAttemptService).should().recordIpFailure("127.0.0.1");
+        then(loginAttemptService).should(never()).recordAccountFailure(any());
+    }
+
+    @Test
+    void loginWithoutCaptchaSucceedsWhenVerifierIsDisabled() {
+        executeTransactionCallbacks();
+        LoginRequestDto request = loginRequest();
+        given(loginAttemptService.checkIp("127.0.0.1")).willReturn(true);
+        given(captchaVerifier.enabled()).willReturn(false);
+        given(adminRepository.findByUsernameOrEmail(request.username(), request.email()))
+                .willReturn(Optional.of(activeUser()));
+        given(adminRepository.lockAndGetAdminAuthState(USER_ID))
+                .willReturn(Optional.of(new AuthAdminRepository.LockedAdminAuthState(
+                        AdminUserStatus.ACTIVE, "stored-hash", AdminUserRole.ADMIN)));
+        given(passwordEncoder.matches("password", "stored-hash")).willReturn(true);
+        given(jwtTokenService.generateAccessToken(any(), any())).willReturn("access-token");
+        given(jwtTokenService.generateRefreshToken(eq(USER_ID), any(UUID.class), any(Instant.class)))
+                .willAnswer(invocation -> new GeneratedToken("refresh-token",
+                        invocation.<Instant>getArgument(2).plus(Duration.ofDays(1))));
+
+        assertDoesNotThrow(() -> service.login(request, "127.0.0.1", "ua", "device"));
+
+        then(captchaVerifier).should(never()).verify(any(), any());
+        then(loginAttemptService).should().clearAccount(adminKey(USER_ID));
     }
 
     @Test
@@ -165,7 +289,7 @@ class AuthAdminServiceTest {
                 .willReturn(Optional.empty());
 
         UnauthorizedException exception = assertThrows(UnauthorizedException.class,
-                () -> service.refreshToken(token, SESSION_ID, "127.0.0.1", "ua"));
+                () -> service.refreshToken(token, "127.0.0.1", "ua"));
 
         assertEquals(ErrorCode.AUTH_REFRESH_TOKEN_INVALID, exception.code);
     }
@@ -178,18 +302,19 @@ class AuthAdminServiceTest {
                 .willReturn(Optional.of(session(hash, null, Instant.now(), Instant.now().plusSeconds(60), Instant.now())));
 
         UnauthorizedException revoked = assertThrows(UnauthorizedException.class,
-                () -> service.refreshToken(token, SESSION_ID, "127.0.0.1", "ua"));
+                () -> service.refreshToken(token, "127.0.0.1", "ua"));
         assertEquals(ErrorCode.AUTH_SESSION_REVOKED, revoked.code);
 
         given(sessionRepository.getSessionByCurrentOrPreviousRefreshTokenHash(hash))
                 .willReturn(Optional.of(session(hash, null, null, Instant.now().minusSeconds(60), Instant.now())));
         UnauthorizedException expired = assertThrows(UnauthorizedException.class,
-                () -> service.refreshToken(token, SESSION_ID, "127.0.0.1", "ua"));
+                () -> service.refreshToken(token, "127.0.0.1", "ua"));
         assertEquals(ErrorCode.AUTH_SESSION_EXPIRED, expired.code);
     }
 
     @Test
     void refreshRevokesDisabledAccountsSessions() {
+        executeTransactionCallbacks();
         String token = "refresh";
         String hash = HashUtils.sha256Hex(token);
         AuthAdminSessionRepository.SelectedSessionWithUser disabled = new AuthAdminSessionRepository.SelectedSessionWithUser(
@@ -200,10 +325,12 @@ class AuthAdminServiceTest {
         given(sessionRepository.getSessionByCurrentOrPreviousRefreshTokenHash(hash)).willReturn(Optional.of(disabled));
 
         ForbiddenException exception = assertThrows(ForbiddenException.class,
-                () -> service.refreshToken(token, SESSION_ID, "127.0.0.1", "ua"));
+                () -> service.refreshToken(token, "127.0.0.1", "ua"));
 
         assertEquals(ErrorCode.AUTH_ACCOUNT_DISABLED, exception.code);
+        then(adminRepository).should().lockAndGetAdminAuthState(USER_ID);
         then(sessionRepository).should().revokeAllByUser(eq(USER_ID), eq(AdminSessionRevocationReason.ACCOUNT_DISABLED), any(Instant.class));
+        then(operationLogRepository).should().insert(any());
     }
 
     @Test
@@ -215,7 +342,7 @@ class AuthAdminServiceTest {
                         Instant.now().plusSeconds(60), Instant.now())));
 
         ConflictException exception = assertThrows(ConflictException.class,
-                () -> service.refreshToken(oldToken, SESSION_ID, "127.0.0.1", "ua"));
+                () -> service.refreshToken(oldToken, "127.0.0.1", "ua"));
 
         assertEquals(ErrorCode.AUTH_REFRESH_IN_PROGRESS, exception.code);
         then(sessionRepository).should(never()).revokeAllByUser(
@@ -234,9 +361,10 @@ class AuthAdminServiceTest {
                 .willReturn(2);
 
         UnauthorizedException exception = assertThrows(UnauthorizedException.class,
-                () -> service.refreshToken(oldToken, SESSION_ID, "127.0.0.2", "replayer-agent"));
+                () -> service.refreshToken(oldToken, "127.0.0.2", "replayer-agent"));
 
         assertEquals(ErrorCode.AUTH_REFRESH_REUSED, exception.code);
+        then(adminRepository).should().lockAndGetAdminAuthState(USER_ID);
         then(sessionRepository).should().revokeAllByUser(
                 eq(USER_ID), eq(AdminSessionRevocationReason.TOKEN_REUSE_DETECTED), any(Instant.class));
         then(operationLogRepository).should().insert(any());
@@ -255,7 +383,7 @@ class AuthAdminServiceTest {
                 eq("127.0.0.1"), any(Instant.class), any(Instant.class))).willReturn(1);
         given(jwtTokenService.generateAccessToken(any(), any())).willReturn("new-access");
 
-        RefreshTokenResponse response = service.refreshToken(oldToken, SESSION_ID, "127.0.0.1", "ua");
+        RefreshTokenResponse response = service.refreshToken(oldToken, "127.0.0.1", "ua");
 
         assertEquals("new-access", response.getAccessToken());
         assertEquals("new-refresh", response.getRefreshToken());
@@ -275,7 +403,7 @@ class AuthAdminServiceTest {
                 anyString(), any(Instant.class), any(Instant.class))).willReturn(0);
 
         ConflictException exception = assertThrows(ConflictException.class,
-                () -> service.refreshToken(oldToken, SESSION_ID, "127.0.0.1", "ua"));
+                () -> service.refreshToken(oldToken, "127.0.0.1", "ua"));
 
         assertEquals(ErrorCode.AUTH_REFRESH_IN_PROGRESS, exception.code);
     }
@@ -287,6 +415,7 @@ class AuthAdminServiceTest {
 
         then(sessionRepository).should().revokeSession(
                 eq(SESSION_ID), eq(AdminSessionRevocationReason.LOGOUT), any(Instant.class));
+        then(adminRepository).should().lockAndGetAdminAuthState(USER_ID);
         then(operationLogRepository).should().insert(any());
     }
 
@@ -294,9 +423,16 @@ class AuthAdminServiceTest {
         return new LoginRequestDto(null, "Admin", "password", "device-1");
     }
 
+    private static LoginAttemptAccountKey<UserTypes> adminKey(long userId) {
+        return LoginAttemptAccountKey.of(UserTypes.ADMIN, Long.toString(userId));
+    }
+
+    private static LoginRequestDto loginRequestWithCaptcha(String token) {
+        return new LoginRequestDto(null, "Admin", "password", "device-1", token);
+    }
+
     private void executeTransactionCallbacks() {
         doAnswer(invocation -> {
-            @SuppressWarnings("unchecked")
             Consumer<TransactionStatus> work = invocation.getArgument(0);
             work.accept(mock(TransactionStatus.class));
             return null;

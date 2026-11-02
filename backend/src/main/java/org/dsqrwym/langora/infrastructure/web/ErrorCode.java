@@ -3,60 +3,124 @@ package org.dsqrwym.langora.infrastructure.web;
 import org.springframework.http.HttpStatusCode;
 
 public enum ErrorCode {
-    /** Request validation failed. */
+    /**
+     * Request validation failed.
+     */
     VALIDATION_FAILED("Validation failed"),
-    /** A required input value is missing. */
+    /**
+     * A required input value is missing.
+     */
     VALIDATION_REQUIRED("A required value is missing"),
-    /** An input value has an invalid format. */
+    /**
+     * An input value has an invalid format.
+     */
     VALIDATION_INVALID_FORMAT("An input value has an invalid format"),
-    /** An input value is outside its allowed length. */
+    /**
+     * An input value is outside its allowed length.
+     */
     VALIDATION_LENGTH_OUT_OF_RANGE("An input value is outside its allowed length"),
-    /** An input value violates a validation rule. */
+    /**
+     * An input value violates a validation rule.
+     */
     VALIDATION_INVALID_VALUE("An input value is invalid"),
-    /** A combination of input values is invalid. */
+    /**
+     * A combination of input values is invalid.
+     */
     VALIDATION_INVALID_COMBINATION("The provided values cannot be used together"),
 
-    /** Request syntax or body is malformed. */
+    /**
+     * Request syntax or body is malformed.
+     */
     MALFORMED_REQUEST("Malformed request"),
-    /** The HTTP method is not supported for this resource. */
+    /**
+     * The HTTP method is not supported for this resource.
+     */
     METHOD_NOT_ALLOWED("Method not allowed"),
-    /** The requested response representation is unavailable. */
+    /**
+     * The requested response representation is unavailable.
+     */
     NOT_ACCEPTABLE("Requested representation is not acceptable"),
-    /** The request media type is unsupported. */
+    /**
+     * The request media type is unsupported.
+     */
     UNSUPPORTED_MEDIA_TYPE("Unsupported media type"),
-    /** The request could not be completed. */
+    /**
+     * The request could not be completed.
+     */
     REQUEST_FAILED("Request failed"),
 
-    /** Login credentials are invalid. */
+    /**
+     * Login credentials are invalid.
+     */
     AUTH_INVALID_CREDENTIALS("Invalid username/email or password"),
-    /** An access token is missing, expired, or invalid. */
+    /**
+     * An access token is missing, expired, or invalid.
+     */
     AUTH_ACCESS_TOKEN_INVALID("Authentication is required or the access token is invalid"),
-    /** The refresh-token cookie is missing. */
+    /**
+     * The refresh-token cookie is missing.
+     */
     AUTH_REFRESH_TOKEN_MISSING("Refresh token is required"),
-    /** A refresh token is invalid or expired. */
+    /**
+     * A refresh token is invalid or expired.
+     */
     AUTH_REFRESH_TOKEN_INVALID("Refresh token is invalid or expired"),
-    /** The refresh-token session was revoked. */
+    /**
+     * The refresh-token session was revoked.
+     */
     AUTH_SESSION_REVOKED("Session has been revoked"),
-    /** The refresh-token session expired. */
+    /**
+     * The refresh-token session expired.
+     */
     AUTH_SESSION_EXPIRED("Session has expired"),
-    /** Refresh is already being completed by another request. */
+    /**
+     * Refresh is already being completed by another request.
+     */
     AUTH_REFRESH_IN_PROGRESS("Refresh token was already rotated by another request"),
-    /** A rotated refresh token was replayed. */
+    /**
+     * A rotated refresh token was replayed.
+     */
     AUTH_REFRESH_REUSED("Refresh token reuse detected; all sessions were revoked"),
-    /** The CSRF token is missing or invalid. */
+    /**
+     * The CSRF token is missing or invalid.
+     */
     AUTH_CSRF_INVALID("Invalid or missing CSRF token"),
-    /** The authenticated account is disabled. */
+    /**
+     * The authenticated account is disabled.
+     */
     AUTH_ACCOUNT_DISABLED("Account is not active"),
+    /**
+     * The IP must solve a CAPTCHA before the login can continue.
+     */
+    AUTH_CAPTCHA_REQUIRED("A CAPTCHA is required"),
+    /**
+     * The CAPTCHA token is invalid, expired, or already used.
+     */
+    AUTH_CAPTCHA_INVALID("The CAPTCHA token is invalid or expired"),
+    /**
+     * The CAPTCHA provider cannot verify tokens right now.
+     */
+    AUTH_CAPTCHA_UNAVAILABLE("CAPTCHA verification is temporarily unavailable"),
 
-    /** The caller lacks permission for this operation. */
+    /**
+     * The caller lacks permission for this operation.
+     */
     ACCESS_DENIED("Access denied"),
-    /** The requested resource does not exist. */
+    /**
+     * The requested resource does not exist.
+     */
     RESOURCE_NOT_FOUND("Resource not found"),
-    /** The resource state conflicts with this request. */
+    /**
+     * The resource state conflicts with this request.
+     */
     RESOURCE_CONFLICT("Resource state conflicts with this request"),
-    /** The caller exceeded an allowed request rate. */
+    /**
+     * The caller exceeded an allowed request rate.
+     */
     RATE_LIMITED("Too many requests"),
-    /** An unexpected server failure occurred. */
+    /**
+     * An unexpected server failure occurred.
+     */
     INTERNAL_ERROR("Internal server error");
 
     private final String defaultMessage;

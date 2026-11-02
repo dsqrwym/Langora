@@ -1,6 +1,7 @@
 package org.dsqrwym.langora.auth.jwt;
 
 import org.dsqrwym.langora.auth.UserTypes;
+import org.dsqrwym.langora.infrastructure.jooq.enums.AdminUserRole;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.springframework.security.core.GrantedAuthority;
@@ -32,8 +33,8 @@ public record UserJwtPayload(
     public static final String CLAIM_NAME_ROLES = "roles";
     public static final String CLAIM_NAME_SESSION_ID = "sessionId";
 
-    public static UserJwtPayload forAdmin(Long id, String username, String email, String adminRole, UUID sessionId) {
-        return new UserJwtPayload(id, username, email, UserTypes.ADMIN, List.of(adminRole), sessionId);
+    public static UserJwtPayload forAdmin(Long id, String username, String email, AdminUserRole adminRole, UUID sessionId) {
+        return new UserJwtPayload(id, username, email, UserTypes.ADMIN, List.of(adminRole.name()), sessionId);
     }
 
     @Override

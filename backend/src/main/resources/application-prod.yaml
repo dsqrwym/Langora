@@ -10,6 +10,12 @@ spring:
       idle-timeout: 298000
       data-source-properties:
         ApplicationName: langora
+  web:
+    error:
+      include-stacktrace: never
+  devtools:
+    restart:
+      enabled: false
 
 springdoc:
   swagger-ui:
@@ -31,10 +37,20 @@ langora:
 
   security:
     cookie:
-      domain: ".domain.es"  # 允许跨子域名共享
+      domain: "dsqrwym.es"  # 允许跨子域名共享
       secure: true          # 生产 HTTPS 必须为 true
       same-site: Lax
     cors:
       allowed-origins:
-        - "https://langora.domain.es"
+        - "https://langora.dsqrwym.es"
       allow-credentials: true
+    captcha:
+      enabled: ${CAPTCHA_ENABLED:true}
+      site-key: ${CAPTCHA_SITE_KEY:}
+      secret-key: ${CAPTCHA_SECRET_KEY:}
+      expected-action: langora-login
+      allowed-hostnames:
+        - "langora.dsqrwym.es"
+      fail-open: true
+      connect-timeout: 2s
+      read-timeout: 3s

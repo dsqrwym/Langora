@@ -16,7 +16,10 @@ public class AuthAdminSessionCleanupTask {
     private final AuthAdminSessionRepository sessionRepository;
     private final AuthAdminSessionProperties sessionProperties;
 
-    @Scheduled(cron = "${langora.auth.admin.session.cleanup.cron:0 30 3 * * ?}")
+    @Scheduled(
+            cron = "${langora.auth.admin.session.cleanup.cron:0 30 3 * * ?}",
+            zone = "${langora.auth.admin.session.cleanup.zone:Europe/Madrid}"
+    )
     public void executeCleanup() {
         if (!sessionProperties.cleanup().enabled()) {
             log.info("[SessionCleanupTask] Admin session cleanup disabled");
@@ -25,14 +28,15 @@ public class AuthAdminSessionCleanupTask {
 
         Instant now = Instant.now();
         Instant cutoff = now.minus(sessionProperties.cleanup().retention());
+        int batchSize = sessionProperties.cleanup().batchSize();
 
         log.info(
-                "[SessionCleanupTask] Running cleanup. Purging sessions ended before {} (retention: {})",
-                cutoff, sessionProperties.cleanup().retention()
+                "[SessionCleanupTask] Running cleanup. Purging sessions ended before {} (retention: {}, batchSize: {})",
+                cutoff, sessionProperties.cleanup().retention(), batchSize
         );
 
         try {
-            int deletedRows = sessionRepository.purgeSessionsEndedBefore(cutoff);
+            int deletedRows = sessionRepository.purgeSessionsEndedBefore(cutoff, batchSize);
             log.info("[SessionCleanupTask] Purged {} expired/revoked admin session(s).", deletedRows);
         } catch (Exception e) {
             log.error("[SessionCleanupTask] Failed to purge admin sessions: {}", e.getMessage(), e);

@@ -56,6 +56,28 @@ public class AuthAdminRepository {
         return findByEmail(email);
     }
 
+
+    public record LockedAdminAuthState(
+            AdminUserStatus status,
+            String passwordHash,
+            AdminUserRole role
+    ) {
+    }
+
+    public Optional<LockedAdminAuthState> lockAndGetAdminAuthState(Long id) {
+        return db
+                .select(
+                        ADMIN_USERS.STATUS,
+                        ADMIN_USERS.PASSWORD_HASH,
+                        ADMIN_USERS.ROLE
+                )
+                .from(ADMIN_USERS)
+                .where(ADMIN_USERS.ID.eq(id))
+                .forUpdate()
+                .fetchOptional(mapping(LockedAdminAuthState::new));
+
+    }
+
     public void setLastLoginAt(Long userId, Instant now) {
         db.update(ADMIN_USERS)
                 .set(ADMIN_USERS.LAST_LOGIN_AT, now)

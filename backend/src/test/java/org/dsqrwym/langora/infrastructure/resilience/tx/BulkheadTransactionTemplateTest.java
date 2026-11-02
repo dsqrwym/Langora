@@ -51,7 +51,7 @@ class BulkheadTransactionTemplateTest {
         assertThat(bulkhead.tryAcquirePermission()).isTrue();
         BulkheadTransactionTemplate tx = template(bulkhead);
 
-        assertThatThrownBy(() -> tx.executeWithoutResult(_ -> { }))
+        assertThatThrownBy(() -> tx.executeWithoutResult(ignored -> { }))
                 .isInstanceOf(RateLimitedException.class)
                 .hasMessage("Too many requests");
 
@@ -66,7 +66,7 @@ class BulkheadTransactionTemplateTest {
         Bulkhead bulkhead = bulkhead(1);
         BulkheadTransactionTemplate tx = template(bulkhead);
 
-        tx.executeWithoutResult(_ -> { });
+        tx.executeWithoutResult(ignored -> { });
 
         assertThat(bulkhead.getMetrics().getAvailableConcurrentCalls()).isEqualTo(1);
         verify(connection).commit();
@@ -79,7 +79,7 @@ class BulkheadTransactionTemplateTest {
         Bulkhead bulkhead = bulkhead(1);
         BulkheadTransactionTemplate tx = template(bulkhead);
 
-        assertThatThrownBy(() -> tx.executeWithoutResult(_ -> {
+        assertThatThrownBy(() -> tx.executeWithoutResult(ignored -> {
             throw new IllegalStateException("boom");
         })).isInstanceOf(IllegalStateException.class);
 
@@ -93,10 +93,10 @@ class BulkheadTransactionTemplateTest {
         Bulkhead bulkhead = bulkhead(2);
         BulkheadTransactionTemplate tx = template(bulkhead);
 
-        tx.executeWithoutResult(_ -> {
+        tx.executeWithoutResult(ignored -> {
             assertThat(bulkhead.getMetrics().getAvailableConcurrentCalls()).isEqualTo(1);
 
-            tx.executeWithoutResult(_ ->
+            tx.executeWithoutResult(nested ->
                     assertThat(bulkhead.getMetrics().getAvailableConcurrentCalls()).isEqualTo(1));
         });
 

@@ -81,7 +81,8 @@ public class SecurityConfig {
                         auth
                                 .requestMatchers(
                                         "/auth/admin/login",
-                                        "/auth/admin/refresh"
+                                        "/auth/admin/refresh",
+                                        "/auth/captcha/config"
                                 ).permitAll()
                                 .anyRequest()
                                 .authenticated()
@@ -94,19 +95,19 @@ public class SecurityConfig {
                                                 .decoder(accessTokenDecoder)
                                                 .jwtAuthenticationConverter(authenticationConverter)
                                 )
-                                .authenticationEntryPoint((_, res, _) ->
+                                .authenticationEntryPoint((request, res, ex) ->
                                         write(res, HttpStatus.UNAUTHORIZED, ErrorCode.AUTH_ACCESS_TOKEN_INVALID, jsonMapper)
                                 )
-                                .accessDeniedHandler((_, res, _) ->
+                                .accessDeniedHandler((request, res, ex) ->
                                         write(res, HttpStatus.FORBIDDEN, ErrorCode.ACCESS_DENIED, jsonMapper)
                                 )
                 )
 
                 // Handle authentication and authorization errors
                 .exceptionHandling(error ->
-                        error.authenticationEntryPoint((_, res, _) ->
+                        error.authenticationEntryPoint((request, res, ex) ->
                                 write(res, HttpStatus.UNAUTHORIZED, ErrorCode.AUTH_ACCESS_TOKEN_INVALID, jsonMapper)
-                        ).accessDeniedHandler((_, res, _) ->
+                        ).accessDeniedHandler((request, res, ex) ->
                                 write(res, HttpStatus.FORBIDDEN, ErrorCode.ACCESS_DENIED, jsonMapper)
                         )
                 );

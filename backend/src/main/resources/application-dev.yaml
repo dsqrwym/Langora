@@ -1,7 +1,8 @@
 spring:
   datasource:
     hikari:
-      maximum-pool-size: 12
+      # Neo 免费层 大概 100
+      maximum-pool-size: 50
       minimum-idle: 0
       connection-timeout: 3000
       # Hikari：validation-timeout < connection-timeout
@@ -10,6 +11,10 @@ spring:
       idle-timeout: 298000
       data-source-properties:
         ApplicationName: langora
+
+  devtools:
+    restart:
+      enabled: false
 
 springdoc:
   swagger-ui:
@@ -38,7 +43,25 @@ langora:
       allowed-origins:
         - "http://127.0.0.1:8080"
         - "http://127.0.0.1:5173"
+        - "http://localhost:5173"
+        - "https://langora.dsqrwym.es"
       allow-credentials: true
+    captcha:
+      enabled: true
+      # 测试 key 来自 https://developers.cloudflare.com/turnstile/troubleshooting/testing/
+      #site-key: 1x00000000000000000000AA
+      site-key: ${CAPTCHA_SITE_KEY}
+      #secret-key: 1x0000000000000000000000000000000AA
+      secret-key: ${CAPTCHA_SECRET_KEY}
+      #expected-action: ""       # 测试 key 返回 action=""，跳过校验
+      expected-action: langora-login
+      allowed-hostnames: # 测试 key 返回 hostname=localhost，跳过校验
+        - "localhost"
+        - "langora.dsqrwym.es"
+        - "127.0.0.1"
+      fail-open: true
+      connect-timeout: 2s
+      read-timeout: 3s
 
 logging:
   level:

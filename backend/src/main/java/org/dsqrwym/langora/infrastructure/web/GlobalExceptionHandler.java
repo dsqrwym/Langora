@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.dsqrwym.langora.infrastructure.web.dto.ParamErrorDetail;
 import org.dsqrwym.langora.infrastructure.web.dto.ValidationErrorDetail;
 import org.dsqrwym.langora.infrastructure.web.exception.BusinessException;
+import org.dsqrwym.langora.infrastructure.web.exception.RateLimitedException;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.springframework.http.HttpHeaders;
@@ -149,6 +150,13 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(
                 ApiResponse.error(HttpStatus.FORBIDDEN, ErrorCode.ACCESS_DENIED, null)
         );
+    }
+
+    @ExceptionHandler(RateLimitedException.class)
+    public ResponseEntity<ApiResponse<Void>> onRateLimited(RateLimitedException ex) {
+        return ResponseEntity.status(ex.status)
+                .header(HttpHeaders.RETRY_AFTER, String.valueOf(ex.retryAfterSeconds))
+                .body(ApiResponse.error(ex.status, ex.code, null));
     }
 
     @ExceptionHandler(Exception.class)

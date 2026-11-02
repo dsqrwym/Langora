@@ -16,14 +16,15 @@ import org.dsqrwym.langora.infrastructure.util.DeviceNameResolver;
 import org.dsqrwym.langora.infrastructure.util.TextUtils;
 import org.dsqrwym.langora.infrastructure.web.ApiResponse;
 import org.dsqrwym.langora.infrastructure.web.ErrorCode;
-import org.dsqrwym.langora.infrastructure.web.exception.ConflictException;
 import org.dsqrwym.langora.infrastructure.web.exception.ForbiddenException;
 import org.dsqrwym.langora.infrastructure.web.exception.UnauthorizedException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Objects;
 import java.util.UUID;
 
 @RestController
@@ -38,7 +39,7 @@ public class AuthAdminController {
     @PostMapping("/login")
     public ApiResponse<LoginResponseDto> login(@Valid @RequestBody LoginRequestDto loginRequestDto, HttpServletRequest req, HttpServletResponse res) {
         final String userAgent = TextUtils.safeSubstring(
-                TextUtils.defaultIfNull(req.getHeader(HttpHeaders.USER_AGENT), "unknown"),
+                Objects.requireNonNullElse(req.getHeader(HttpHeaders.USER_AGENT), "unknown"),
                 500
         );
 
@@ -46,6 +47,7 @@ public class AuthAdminController {
 
         cookieService.attachAuthCookies(res, response.getRefreshToken());
         // In webs do not need to return refresh token in JSON
+        // Web 端不需要在 JSON 里返回 refresh token，只放在 HttpOnly Cookie 中
         response.setRefreshToken(null);
 
         response.setCsrfToken(csrfService.generateCsrfToken(response.getSessionId()));
@@ -59,38 +61,40 @@ public class AuthAdminController {
             HttpServletRequest req, HttpServletResponse res
     ) {
 
-        String refreshToken = cookieService.extractRefreshToken(req);
+        final String refreshToken = cookieService.extractRefreshToken(req);
         if (!StringUtils.hasText(refreshToken)) {
             throw new UnauthorizedException(ErrorCode.AUTH_REFRESH_TOKEN_MISSING);
         }
 
-        UUID sessionId = jwtService.verifyAndExtractSessionId(refreshToken);
+        UUID sessionId;
+        try {
+            sessionId = jwtService.verifyAndExtractSessionId(refreshToken);
+        } catch (UnauthorizedException e) {
+            cookieService.clearAuthCookies(res);
+            throw e;
+        }
 
         if (!csrfService.validateCsrfToken(sessionId, csrfToken)) {
             throw new ForbiddenException(ErrorCode.AUTH_CSRF_INVALID);
         }
 
         final String userAgent = TextUtils.safeSubstring(
-                TextUtils.defaultIfNull(req.getHeader(HttpHeaders.USER_AGENT), "unknown"),
+                Objects.requireNonNullElse(req.getHeader(HttpHeaders.USER_AGENT), "unknown"),
                 500
         );
 
         try {
             RefreshTokenResponse response = authAdminService.refreshToken(
-                    refreshToken, sessionId, req.getRemoteAddr(), userAgent);
+                    refreshToken, req.getRemoteAddr(), userAgent);
 
             cookieService.attachAuthCookies(res, response.getRefreshToken());
             response.setRefreshToken(null);
             response.setCsrfToken(csrfService.generateCsrfToken(sessionId));
 
             return ApiResponse.ok(response);
-        } catch (ConflictException e) {
-            // AUTH_REFRESH_IN_PROGRESS: a concurrent request already rotated this token.
-            // Keep the cookie — the client must wait for the winning request's Set-Cookie.
-            throw e;
-        } catch (Exception e) {
-            // Any other failure (reuse detected, revoked, expired, account disabled):
-            // the cookie is now unusable; clear it to prevent the browser from looping forever.
+        } catch (UnauthorizedException | ForbiddenException e) {
+            // Definitive auth failures only. 409 (in progress) and 5xx must keep the cookie.
+            // 只清理确定的认证失败；409（并发刷新中）和 5xx 必须保留 cookie。
             cookieService.clearAuthCookies(res);
             throw e;
         }
@@ -102,7 +106,7 @@ public class AuthAdminController {
             HttpServletRequest req, HttpServletResponse res) {
 
         final String userAgent = TextUtils.safeSubstring(
-                TextUtils.defaultIfNull(req.getHeader(HttpHeaders.USER_AGENT), "unknown"), 500);
+                Objects.requireNonNullElse(req.getHeader(HttpHeaders.USER_AGENT), "unknown"), 500);
 
         authAdminService.logout(
                 payload.sessionId(), payload.userId(), payload.username(),

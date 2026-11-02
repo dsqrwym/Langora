@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.dsqrwym.langora.infrastructure.jooq.enums.AdminSessionRevocationReason;
 import org.dsqrwym.langora.infrastructure.jooq.enums.AdminUserRole;
 import org.dsqrwym.langora.infrastructure.jooq.enums.AdminUserStatus;
+import org.jooq.Condition;
 import org.jooq.DSLContext;
 import org.springframework.stereotype.Repository;
 
@@ -21,15 +22,7 @@ import static org.jooq.impl.DSL.select;
 public class AuthAdminSessionRepository {
     private final DSLContext db;
 
-    public void lockAdminUserForSessionUpdate(Long userId) {
-        db.select(ADMIN_USERS.ID)
-                .from(ADMIN_USERS)
-                .where(ADMIN_USERS.ID.eq(userId))
-                .forUpdate()
-                .fetchOne();
-    }
-
-    public void revokeOldsSessions(Long userId, Integer maxSessions, Instant now) {
+    public void revokeOldsSessions(Long userId, int maxSessions, Instant now) {
         db.update(ADMIN_USER_SESSIONS)
                 .set(ADMIN_USER_SESSIONS.REVOKED_AT, now)
                 .set(ADMIN_USER_SESSIONS.REVOKED_REASON, AdminSessionRevocationReason.SESSION_LIMIT_EXCEEDED)
@@ -148,18 +141,38 @@ public class AuthAdminSessionRepository {
                 .execute();
     }
 
-    public int purgeSessionsEndedBefore(Instant cutoffTime) {
-        return db.delete(ADMIN_USER_SESSIONS)
-                .where(
-                        // has been revoked, and revocation was more than (cutoff time) ago
-                        ADMIN_USER_SESSIONS.REVOKED_AT.isNotNull()
-                                .and(ADMIN_USER_SESSIONS.REVOKED_AT.lt(cutoffTime))
-                )
-                .or(
-                        // not actively revoked, but the expiration was more than (cutoff time) ago
-                        ADMIN_USER_SESSIONS.REVOKED_AT.isNull()
-                                .and(ADMIN_USER_SESSIONS.EXPIRES_AT.lt(cutoffTime))
-                )
-                .execute();
+    /**
+     * Deletes expired or revoked sessions in batches so the purge never holds a
+     * long transaction or thousands of row locks at once.
+     *
+     * 分批删除已过期/已撤销的会话，避免一次删除持有长事务和大量行锁。
+     *
+     * @return total number of deleted rows
+     */
+    public int purgeSessionsEndedBefore(Instant cutoffTime, int batchSize) {
+        if (batchSize <= 0) {
+            throw new IllegalArgumentException("batchSize must be > 0");
+        }
+        int total = 0;
+        int deleted;
+        do {
+            deleted = db.deleteFrom(ADMIN_USER_SESSIONS)
+                    .where(ADMIN_USER_SESSIONS.ID.in(
+                            select(ADMIN_USER_SESSIONS.ID)
+                                    .from(ADMIN_USER_SESSIONS)
+                                    .where(endedBefore(cutoffTime))
+                                    .limit(batchSize)
+                    ))
+                    .execute();
+            total += deleted;
+        } while (deleted == batchSize);
+        return total;
+    }
+
+    private static Condition endedBefore(Instant cutoffTime) {
+        return ADMIN_USER_SESSIONS.REVOKED_AT.isNotNull()
+                .and(ADMIN_USER_SESSIONS.REVOKED_AT.lt(cutoffTime))
+                .or(ADMIN_USER_SESSIONS.REVOKED_AT.isNull()
+                        .and(ADMIN_USER_SESSIONS.EXPIRES_AT.lt(cutoffTime)));
     }
 }

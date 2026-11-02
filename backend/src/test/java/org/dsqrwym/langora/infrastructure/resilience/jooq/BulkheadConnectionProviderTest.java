@@ -210,8 +210,8 @@ class BulkheadConnectionProviderTest {
         AtomicInteger permitted = new AtomicInteger();
         AtomicInteger finished = new AtomicInteger();
         bulkhead.getEventPublisher()
-                .onCallPermitted(_ -> permitted.incrementAndGet())
-                .onCallFinished(_ -> finished.incrementAndGet());
+                .onCallPermitted(ignored -> permitted.incrementAndGet())
+                .onCallFinished(ignored -> finished.incrementAndGet());
 
         provider.release(provider.acquire());
         provider.release(provider.acquire());

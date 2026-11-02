@@ -9,12 +9,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class LoginRequestDtoValidationTest {
 
+    private static final String DEVICE_ID = "f0e1d2c3-b4a5-4678-9012-3456789abcde";
+
     private final Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
 
     @Test
     void normalizesEmailToLowercaseAndTrimsIdentifierText() {
         LoginRequestDto request = new LoginRequestDto(
-                "  Admin@Langora.COM  ", null, "old-password", "device-1");
+                "  Admin@Langora.COM  ", null, "old-password", DEVICE_ID);
 
         assertEquals("admin@langora.com", request.email());
     }
@@ -22,7 +24,7 @@ class LoginRequestDtoValidationTest {
     @Test
     void preservesUsernameCaseWhileTrimmingIt() {
         LoginRequestDto request = new LoginRequestDto(
-                null, "  Admin.User  ", "old-password", "device-1");
+                null, "  Admin.User  ", "old-password", DEVICE_ID);
 
         assertEquals("Admin.User", request.username());
     }
@@ -30,9 +32,9 @@ class LoginRequestDtoValidationTest {
     @Test
     void requiresExactlyOneLoginIdentifier() {
         LoginRequestDto both = new LoginRequestDto(
-                "admin@langora.com", "Admin", "old-password", "device-1");
+                "admin@langora.com", "Admin", "old-password", DEVICE_ID);
         LoginRequestDto neither = new LoginRequestDto(
-                null, null, "old-password", "device-1");
+                null, null, "old-password", DEVICE_ID);
 
         assertTrue(validator.validate(both).stream()
                 .anyMatch(error -> error.getMessage().equals("Provide exactly one of email or username")));
@@ -54,7 +56,7 @@ class LoginRequestDtoValidationTest {
     void rejectsPasswordLongerThanBcryptUtf8Limit() {
         // Each Chinese character is three bytes in UTF-8: 25 * 3 = 75 bytes.
         LoginRequestDto request = new LoginRequestDto(
-                "admin@langora.com", null, "中".repeat(25), "device-1");
+                "admin@langora.com", null, "中".repeat(25), DEVICE_ID);
 
         assertTrue(validator.validate(request).stream()
                 .anyMatch(error -> error.getPropertyPath().toString().equals("password")));
@@ -63,8 +65,34 @@ class LoginRequestDtoValidationTest {
     @Test
     void acceptsExactlySeventyTwoAsciiPasswordBytesDuringLogin() {
         LoginRequestDto request = new LoginRequestDto(
-                "admin@langora.com", null, "a".repeat(72), "device-1");
+                "admin@langora.com", null, "a".repeat(72), DEVICE_ID);
 
         assertTrue(validator.validate(request).isEmpty());
+    }
+
+    @Test
+    void rejectsNonUuidDeviceId() {
+        LoginRequestDto request = new LoginRequestDto(
+                "admin@langora.com", null, "password", "device-1");
+
+        assertTrue(validator.validate(request).stream()
+                .anyMatch(error -> error.getPropertyPath().toString().equals("deviceUuid")));
+    }
+
+    @Test
+    void acceptsLoginWithoutCaptchaToken() {
+        LoginRequestDto request = new LoginRequestDto(
+                "admin@langora.com", null, "password", DEVICE_ID);
+
+        assertTrue(validator.validate(request).isEmpty());
+    }
+
+    @Test
+    void rejectsCaptchaTokenLongerThanCloudflareLimit() {
+        LoginRequestDto request = new LoginRequestDto(
+                "admin@langora.com", null, "password", DEVICE_ID, "a".repeat(2049));
+
+        assertTrue(validator.validate(request).stream()
+                .anyMatch(error -> error.getPropertyPath().toString().equals("captchaToken")));
     }
 }

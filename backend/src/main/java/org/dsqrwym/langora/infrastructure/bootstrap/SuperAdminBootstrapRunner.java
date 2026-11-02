@@ -38,7 +38,7 @@ public class SuperAdminBootstrapRunner implements ApplicationRunner {
             return;
         }
 
-        tx.executeWithoutResult(_ -> {
+        tx.executeWithoutResult(ignored -> {
 
             AdminUsersRecord existingSuperAdmin = db.select(
                             ADMIN_USERS.ID, ADMIN_USERS.EMAIL, ADMIN_USERS.USERNAME

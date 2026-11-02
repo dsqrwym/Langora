@@ -10,6 +10,7 @@ import org.dsqrwym.langora.auth.jwt.JwtTokenService;
 import org.dsqrwym.langora.auth.service.AuthCookieService;
 import org.dsqrwym.langora.auth.service.AuthCsrfService;
 import org.dsqrwym.langora.infrastructure.web.ErrorCode;
+import org.dsqrwym.langora.infrastructure.web.exception.CaptchaException;
 import org.dsqrwym.langora.infrastructure.web.exception.ConflictException;
 import org.dsqrwym.langora.infrastructure.web.exception.UnauthorizedException;
 import org.junit.jupiter.api.Test;
@@ -69,7 +70,7 @@ class AuthAdminControllerWebTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0) Chrome/130.0")
                         .content("""
-                                {"email":"  ADMIN@LANGORA.COM ","password":"password","deviceUuid":"device-1"}
+                                {"email":"  ADMIN@LANGORA.COM ","password":"password","deviceUuid":"f0e1d2c3-b4a5-4678-9012-3456789abcde"}
                                 """))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value(200))
@@ -90,7 +91,7 @@ class AuthAdminControllerWebTest {
         mockMvc.perform(post("/auth/admin/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"email":"admin@langora.com","username":"Admin","password":"password","deviceUuid":"device-1"}
+                                {"email":"admin@langora.com","username":"Admin","password":"password","deviceUuid":"f0e1d2c3-b4a5-4678-9012-3456789abcde"}
                                 """))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
@@ -108,11 +109,60 @@ class AuthAdminControllerWebTest {
         mockMvc.perform(post("/auth/admin/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"username":"Admin","password":"wrong","deviceUuid":"device-1"}
+                                {"username":"Admin","password":"wrong","deviceUuid":"f0e1d2c3-b4a5-4678-9012-3456789abcde"}
                                 """))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.code").value("AUTH_INVALID_CREDENTIALS"))
                 .andExpect(jsonPath("$.data").value(nullValue()));
+    }
+
+    @Test
+    void loginForwardsCaptchaTokenToTheService() throws Exception {
+        LoginResponseDto serviceResponse = new LoginResponseDto(
+                "access", "refresh", 7L, "Admin", "admin@langora.com", UserTypes.ADMIN,
+                List.of("ADMIN"), SESSION_ID);
+        given(authAdminService.login(any(LoginRequestDto.class), anyString(), anyString(), anyString()))
+                .willReturn(serviceResponse);
+        given(csrfService.generateCsrfToken(SESSION_ID)).willReturn("csrf");
+
+        mockMvc.perform(post("/auth/admin/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"username":"Admin","password":"password","deviceUuid":"f0e1d2c3-b4a5-4678-9012-3456789abcde","captchaToken":"turnstile-token"}
+                                """))
+                .andExpect(status().isOk());
+
+        ArgumentCaptor<LoginRequestDto> captor = ArgumentCaptor.forClass(LoginRequestDto.class);
+        then(authAdminService).should().login(captor.capture(), anyString(), anyString(), anyString());
+        assertEquals("turnstile-token", captor.getValue().captchaToken());
+    }
+
+    @Test
+    void loginMapsCaptchaRequiredToBadRequest() throws Exception {
+        given(authAdminService.login(any(LoginRequestDto.class), anyString(), anyString(), anyString()))
+                .willThrow(CaptchaException.required());
+
+        mockMvc.perform(post("/auth/admin/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"username":"Admin","password":"password","deviceUuid":"f0e1d2c3-b4a5-4678-9012-3456789abcde"}
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("AUTH_CAPTCHA_REQUIRED"));
+    }
+
+    @Test
+    void loginMapsCaptchaUnavailableToServiceUnavailable() throws Exception {
+        given(authAdminService.login(any(LoginRequestDto.class), anyString(), anyString(), anyString()))
+                .willThrow(CaptchaException.unavailable());
+
+        mockMvc.perform(post("/auth/admin/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"username":"Admin","password":"password","deviceUuid":"f0e1d2c3-b4a5-4678-9012-3456789abcde"}
+                                """))
+                .andExpect(status().isServiceUnavailable())
+                .andExpect(jsonPath("$.code").value("AUTH_CAPTCHA_UNAVAILABLE"));
     }
 
     @Test
@@ -145,7 +195,7 @@ class AuthAdminControllerWebTest {
     void refreshSuccessWritesCookieAndHidesRefreshTokenValue() throws Exception {
         RefreshTokenResponse response = new RefreshTokenResponse("new-access", "new-refresh");
         prepareValidRefresh("refresh");
-        given(authAdminService.refreshToken(eq("refresh"), eq(SESSION_ID), anyString(), anyString())).willReturn(response);
+        given(authAdminService.refreshToken(eq("refresh"), anyString(), anyString())).willReturn(response);
         given(csrfService.generateCsrfToken(SESSION_ID)).willReturn("new-csrf");
 
         mockMvc.perform(post("/auth/admin/refresh")
@@ -163,7 +213,7 @@ class AuthAdminControllerWebTest {
     @Test
     void refreshConflictKeepsExistingCookieForWinningRequest() throws Exception {
         prepareValidRefresh("refresh");
-        given(authAdminService.refreshToken(eq("refresh"), eq(SESSION_ID), anyString(), anyString()))
+        given(authAdminService.refreshToken(eq("refresh"), anyString(), anyString()))
                 .willThrow(new ConflictException(ErrorCode.AUTH_REFRESH_IN_PROGRESS));
 
         mockMvc.perform(post("/auth/admin/refresh")
@@ -178,7 +228,7 @@ class AuthAdminControllerWebTest {
     @Test
     void refreshReuseClearsUnusableCookie() throws Exception {
         prepareValidRefresh("refresh");
-        given(authAdminService.refreshToken(eq("refresh"), eq(SESSION_ID), anyString(), anyString()))
+        given(authAdminService.refreshToken(eq("refresh"), anyString(), anyString()))
                 .willThrow(new UnauthorizedException(ErrorCode.AUTH_REFRESH_REUSED));
 
         mockMvc.perform(post("/auth/admin/refresh")
