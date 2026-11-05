@@ -255,6 +255,7 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <!-- AOT只服务原生构建，已改绑到 profiles 里的 native 用 -Pnative 激活
                 <executions>
                     <execution>
                         <goals>
@@ -262,6 +263,7 @@
                         </goals>
                     </execution>
                 </executions>
+                -->
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -379,6 +381,31 @@
                     <optional>true</optional>
                 </dependency>
             </dependencies>
+        </profile>
+
+        <profile>
+            <!-- 原生构建专用。AOT 处理只服务 native 构建，绑在默认构建上会有两个代价：
+                 每次 package 额外十几秒，且它真的会启动一次 Spring 上下文（连数据库、跑 Flyway 校验、
+                 超管检查）；另外它生成的 target/spring-aot 会被 IDE 登记成源码目录并按 compile
+                 类路径编译，runtime 作用域的类（如 spring-boot-netty）找不到符号。
+                 用法：mvnw -Pnative native:compile -->
+            <id>native</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.springframework.boot</groupId>
+                        <artifactId>spring-boot-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>process-aot</id>
+                                <goals>
+                                    <goal>process-aot</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
         </profile>
     </profiles>
 </project>
