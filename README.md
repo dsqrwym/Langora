@@ -6,7 +6,7 @@ Langora is a multilingual website and content management system for language sch
 
 Planned stack:
 
-- Java 25
+- Java 21 source/target level, runtime JDK 25 LTS (any JDK 21+ can build)
 - Spring Boot 4 (Spring MVC on embedded Tomcat)
 - Vue.js frontend
 - PostgreSQL (Flyway migrations, jOOQ)
