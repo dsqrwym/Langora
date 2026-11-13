@@ -1,11 +1,11 @@
+import {canUseWindow} from "@/lib/device";
 import {
     DEFAULT_LANGUAGE,
     detectBrowserLanguage,
     isSupportedLanguage,
-    readStoredLanguage,
-    type SupportedLanguage
-} from "@/i18n/languages.ts";
-import {canUseWindow} from "@/lib/device.ts";
+    type SupportedLanguage,
+} from "@/i18n/languages";
+import {readPreferredLanguage} from "@/i18n/locale-preference";
 
 const getLanguageFromPathname = (pathname: string): SupportedLanguage | null => {
     const first = pathname.split("/")[1] ?? "";
@@ -37,12 +37,15 @@ export const replaceLanguagePrefix = (
     return `/${segments.join("/")}`;
 };
 
-export const getLanguageOrDefault = (
-    pathname: string | null = canUseWindow() ? window.location.pathname : null
-): SupportedLanguage => {
+/**
+ * 语言优先级：URL 前缀 > 设备偏好 cookie > 浏览器检测 > 默认。
+ * 不传 pathname 时只在浏览器端读取 location.pathname。
+ */
+export const getLanguageOrDefault = (pathname?: string | null): SupportedLanguage => {
+    const currentPath = pathname ?? (canUseWindow() ? window.location.pathname : null);
     return (
-        (pathname ? getLanguageFromPathname(pathname) : null)
-        ?? readStoredLanguage()
+        (currentPath ? getLanguageFromPathname(currentPath) : null)
+        ?? readPreferredLanguage()
         ?? detectBrowserLanguage()
         ?? DEFAULT_LANGUAGE
     );

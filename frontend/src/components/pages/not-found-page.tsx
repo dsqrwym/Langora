@@ -1,9 +1,13 @@
+"use client"
+
 import {useEffect, useRef} from "react";
-import {Link, useLocation, useNavigate} from "react-router-dom";
+import Link from "next/link";
+import {usePathname, useRouter} from "next/navigation";
 import {ArrowLeft, Home} from "lucide-react";
 import {cn} from "cn";
-import {Button, buttonVariants} from "@/components/ui/button.tsx";
-import {stripLanguagePrefix} from "@/i18n/paths.ts";
+import {Button, buttonVariants} from "@/components/ui/button";
+import {stripLanguagePrefix} from "@/i18n/paths";
+import {NotFoundMessages} from "@/i18n/not-found-messages";
 
 type FieldNode = {
     x: number;
@@ -23,6 +27,7 @@ type Shockwave = {
 const MIN_NODES = 93;
 const MAX_NODES = 373;
 const MAX_SPEED = 9;
+const FOOTER_SIGNATURE = "langora · node field";
 
 /**
  * 全屏节点场。
@@ -430,6 +435,8 @@ const NodeField = ({className}: NodeFieldProps) => {
 type NotFoundPageProps = {
     /** 返回首页按钮（以及快捷键 H、无历史时的兜底）的目标地址 */
     homePath: string;
+    /** 404 文案：三语小字典同步加载，保证错误页首帧即正确语言 */
+    messages: NotFoundMessages;
 };
 
 /**
@@ -437,12 +444,13 @@ type NotFoundPageProps = {
  * 全屏节点场跟随鼠标聚拢、旋涡、互斥，点击空白释放冲击波；
  * 中间是玻璃质感的 404 文案与返回首页操作。
  */
-export const NotFoundPage = ({homePath}: NotFoundPageProps) => {
-    const location = useLocation();
-    const navigate = useNavigate();
+export const NotFoundPage = ({homePath, messages}: NotFoundPageProps) => {
+    // not-found 阶段 usePathname 可能返回 null
+    const currentPathname = usePathname() ?? "/";
+    const router = useRouter();
 
     // 地址里去掉语言前缀，展示 "GET /xxx" 这种终端风格的信息
-    const pathname = stripLanguagePrefix(location.pathname) || "/";
+    const pathname = stripLanguagePrefix(currentPathname) || "/";
     const displayPath = pathname.length > 42 ? `${pathname.slice(0, 42)}…` : pathname;
 
     // 彩蛋：按 H 回首页
@@ -457,22 +465,21 @@ export const NotFoundPage = ({homePath}: NotFoundPageProps) => {
 
             if (event.key.toLowerCase() === "h") {
                 event.preventDefault();
-                navigate(homePath);
+                router.push(homePath);
             }
         };
 
         window.addEventListener("keydown", onKeyDown);
         return () => window.removeEventListener("keydown", onKeyDown);
-    }, [homePath, navigate]);
+    }, [homePath, router]);
 
     const goBack = () => {
-        const state = window.history.state as { idx?: number } | null;
         // 直接从外部打开这个地址时没有上一页，兜底回首页
-        if ((state?.idx ?? 0) > 0) {
-            navigate(-1);
+        if (window.history.length > 1) {
+            router.back();
             return;
         }
-        navigate(homePath);
+        router.push(homePath);
     };
 
     return (
@@ -483,18 +490,22 @@ export const NotFoundPage = ({homePath}: NotFoundPageProps) => {
             {/* 边缘淡出，让中心更聚焦 */}
             <div aria-hidden="true" className="nf-vignette pointer-events-none absolute inset-0 z-[1]"/>
 
-            <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-6 py-8 text-center sm:py-10">
-                <div className="nf-rise inline-flex items-center gap-2.5 rounded-full border border-border/70 bg-background px-3.5 py-1.5 font-mono text-[10px] tracking-[0.3em] text-muted-foreground uppercase">
+            <div
+                className="relative z-10 flex flex-1 flex-col items-center justify-center px-6 py-8 text-center sm:py-10">
+                <div
+                    className="nf-rise inline-flex items-center gap-2.5 rounded-full border border-border/70 bg-background px-3.5 py-1.5 font-mono text-[10px] tracking-[0.3em] text-muted-foreground uppercase">
                     <span className="relative flex size-1.5">
-                        <span className="absolute inline-flex size-full animate-ping rounded-full bg-foreground opacity-75"/>
+                        <span
+                            className="absolute inline-flex size-full animate-ping rounded-full bg-foreground opacity-75"/>
                         <span className="relative inline-flex size-1.5 rounded-full bg-foreground"/>
                     </span>
-                    404 · lost in the grid
+                    {messages.badge}
                 </div>
 
                 <div className="relative mt-4 flex items-center justify-center">
                     {/* Apple 风玻璃板：真实模糊背后的节点场 */}
-                    <div aria-hidden="true" className="nf-glass pointer-events-none absolute inset-0 z-0 rounded-[2.25rem] sm:rounded-[2.75rem]">
+                    <div aria-hidden="true"
+                         className="nf-glass pointer-events-none absolute inset-0 z-0 rounded-[2.25rem] sm:rounded-[2.75rem]">
                         <span className="nf-glass-blur nf-glass-blur-1"/>
                         <span className="nf-glass-blur nf-glass-blur-2"/>
                         <span className="nf-glass-blur nf-glass-blur-3"/>
@@ -506,19 +517,23 @@ export const NotFoundPage = ({homePath}: NotFoundPageProps) => {
                 </div>
 
                 <h2 className="nf-rise mt-4 text-2xl font-semibold tracking-tight text-balance sm:text-3xl [animation-delay:100ms]">
-                    页面不在这里
+                    {messages.title}
                 </h2>
                 <p className="nf-rise mt-2 max-w-md text-sm leading-relaxed text-balance text-muted-foreground [animation-delay:160ms]">
-                    你要找的地址不存在、已被移动，或从未存在过。别担心，沿着光就能回去。
+                    {messages.description}
+                    <br className="hidden sm:block"/>
+                    <span className="text-muted-foreground/70">{messages.reassurance}</span>
                 </p>
 
                 <div className="nf-rise mt-4 w-full max-w-md [animation-delay:220ms]">
-                    <div className="flex items-center gap-2 rounded-xl border border-border/70 bg-background px-3.5 py-2.5 font-mono text-[11px] shadow-sm sm:text-xs">
+                    <div
+                        className="flex items-center gap-2 rounded-xl border border-border/70 bg-background px-3.5 py-2.5 font-mono text-[11px] shadow-sm sm:text-xs">
                         <span className="shrink-0 text-muted-foreground/60">GET</span>
                         <span className="min-w-0 flex-1 truncate text-left text-muted-foreground" title={pathname}>
                             {displayPath}
                         </span>
-                        <span className="shrink-0 rounded-md border border-border/70 bg-muted px-1.5 py-0.5 font-semibold text-foreground">
+                        <span
+                            className="shrink-0 rounded-md border border-border/70 bg-muted px-1.5 py-0.5 font-semibold text-foreground">
                             404
                         </span>
                     </div>
@@ -526,14 +541,14 @@ export const NotFoundPage = ({homePath}: NotFoundPageProps) => {
 
                 <div className="nf-rise mt-6 flex flex-wrap items-center justify-center gap-3 [animation-delay:300ms]">
                     <Link
-                        to={homePath}
+                        href={homePath}
                         className={cn(
                             buttonVariants({variant: "default", size: "lg"}),
                             "h-11 gap-2 rounded-full px-6 text-sm",
                         )}
                     >
                         <Home className="size-4"/>
-                        返回首页
+                        {messages.home}
                     </Link>
                     <Button
                         variant="secondary"
@@ -542,18 +557,18 @@ export const NotFoundPage = ({homePath}: NotFoundPageProps) => {
                         className="h-11 gap-2 rounded-full px-5 text-sm"
                     >
                         <ArrowLeft className="size-4"/>
-                        返回上一页
+                        {messages.back}
                     </Button>
                 </div>
 
                 <p className="nf-rise mt-6 flex items-center gap-2 rounded-full bg-background px-3 py-1 font-mono text-[10px] tracking-[0.18em] text-muted-foreground/70 uppercase [animation-delay:380ms]">
                     <span className="size-1 animate-pulse rounded-full bg-foreground"/>
-                    移动鼠标牵引节点 · 点击空白释放冲击波
+                    {messages.interactionHint}
                 </p>
             </div>
 
             <p className="pointer-events-none absolute bottom-5 left-1/2 z-10 -translate-x-1/2 font-mono text-[10px] tracking-[0.4em] text-muted-foreground/40 uppercase">
-                langora · node field 404
+                {FOOTER_SIGNATURE}
             </p>
         </main>
     );

@@ -1,6 +1,9 @@
 const DEVICE_KEY = 'langora.device_uuid';
 
 export const getOrCreateDeviceUuid = (): string => {
+    if (!canUseWindow()) {
+        throw new Error("getOrCreateDeviceUuid is browser-only");
+    }
     let uuid = localStorage.getItem(DEVICE_KEY);
     if (!uuid) {
         uuid = crypto.randomUUID();

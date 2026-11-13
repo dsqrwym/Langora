@@ -1,13 +1,9 @@
-import type {ResolvedTheme, ThemePreference, ThemeState} from "@/lib/theme/theme-types.ts";
+import type {ResolvedTheme, ThemePreference, ThemeState} from "@/lib/theme/theme-types";
 import {create} from "zustand";
-import {canUseDom} from "@/lib/device.ts";
+import {canUseDom} from "@/lib/device";
+import {DARK_QUERY, THEME_COLOR, THEME_STORAGE_KEY} from "@/lib/theme/theme-constants";
 
-export const THEME_STORAGE_KEY = "langora.theme";
-const DARK_QUERY = "(prefers-color-scheme: dark)";
-const THEME_COLOR: Record<ResolvedTheme, string> = {
-    light: "#ffffff",
-    dark: "#252525", // 与 shadcn `.dark` 的 --background 对齐
-};
+export {THEME_STORAGE_KEY};
 
 export const getSystemTheme = (): ResolvedTheme => {
     return canUseDom() && window.matchMedia(DARK_QUERY).matches ? "dark" : "light";
@@ -17,7 +13,7 @@ export const resolveTheme = (preference: ThemePreference): ResolvedTheme => {
     return preference === "system" ? getSystemTheme() : preference;
 };
 
-const applyTheme = (resolved: ResolvedTheme) => {
+export const applyTheme = (resolved: ResolvedTheme) => {
     if (!canUseDom()) return;
 
     const root = document.documentElement;
@@ -30,7 +26,7 @@ const applyTheme = (resolved: ResolvedTheme) => {
     if (meta) meta.content = THEME_COLOR[resolved];
 }
 
-const readStoredTheme = (): ThemePreference => {
+export const readStoredTheme = (): ThemePreference => {
     if (!canUseDom()) return "system";
 
     try {
@@ -87,4 +83,3 @@ if (canUseDom()) {
         useThemeStore.setState({preference, resolvedTheme});
     });
 }
-

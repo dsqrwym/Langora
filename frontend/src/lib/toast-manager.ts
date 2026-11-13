@@ -24,9 +24,20 @@ export type ShowToastOptions = {
      */
     description?: string;
     position?: ToastPosition;
-    duration?: number;
+    duration?: ToastDuration;
     id?: string;
 }
+
+export const TOAST_DURATION = {
+    /** 成功类：扫一眼就够 */
+    short: 2_500,
+    /** 普通提示：与 sonner 默认一致 */
+    default: 4_000,
+    /** 需要读两行（标题 + 错误码）或需要用户行动的错误 */
+    long: 8_000,
+} as const;
+
+export type ToastDuration = (typeof TOAST_DURATION)[keyof typeof TOAST_DURATION] | number;
 
 export const showToast = (
     {
@@ -34,7 +45,7 @@ export const showToast = (
         title,
         description,
         position = "top-right",
-        duration,
+        duration = TOAST_DURATION.default,
         id,
     }: ShowToastOptions
 ): string | number => {
@@ -58,3 +69,15 @@ export const showToast = (
 export const dismissToast = (id?: string | number): void => {
     toast.dismiss(id);
 };
+
+export const showErrorToast = (
+    {
+        title,
+        description,
+        position = "top-right",
+        duration = TOAST_DURATION.default,
+        id,
+    }: ShowToastOptions
+): string | number => {
+    return toast.error(title, {description, duration, id, position});
+}
