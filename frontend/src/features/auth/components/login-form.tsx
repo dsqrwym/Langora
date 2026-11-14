@@ -54,6 +54,19 @@ export function LoginForm(
     // React 把 disabled 写进 DOM 之前连点两下会双触发 而 ref 读写立即生效
     const submittingRef = useRef(false);
 
+    const identifier = withFormat(register("identifier"), (raw) => {
+        const formatted = raw.trim();
+        if (formatted.includes("@")) {
+            return formatted.toLowerCase().slice(0, EMAIL_MAX_LENGTH);
+        }
+
+        return formatted.slice(0, ADMIN_USERNAME_MAX_LENGTH);
+    });
+    const identifierError = identifier.name + "-error";
+
+    const password = register("password");
+    const passwordError = password.name + "-error";
+
     useEffect(() => {
         if (!captchaRequired || captchaWidget.current || !captchaSlot.current) return;
 
@@ -146,41 +159,49 @@ export function LoginForm(
                     </p>
                 </div>
                 <Field>
-                    <FieldLabel htmlFor="identifier">{auth.identifierLabel}</FieldLabel>
+                    <FieldLabel htmlFor={identifier.name}>{auth.identifierLabel}</FieldLabel>
                     <Input
+                        id={identifier.name}
+                        aria-invalid={errors.identifier ? true : undefined}
+                        aria-describedby={errors.identifier ? identifierError : undefined}
+                        autoCapitalize="none"
+                        autoCorrect="off"
                         type="text"
                         placeholder={auth.identifierPlaceholder}
                         autoComplete={isEmail ? "email" : "username"}
                         disabled={isSubmitting}
-                        {...withFormat(register("identifier"), (raw) => {
-                            const formatted = raw.trim();
-                            if (formatted.includes("@")) {
-                                return formatted.toLowerCase().slice(0, EMAIL_MAX_LENGTH);
-                            }
-
-                            return formatted.slice(0, ADMIN_USERNAME_MAX_LENGTH);
-                        })}
+                        {...identifier}
                         required
                     />
-                    <FieldError errors={[errors.identifier]}/>
+                    <FieldError id={identifierError} errors={[errors.identifier]}/>
                 </Field>
                 <Field>
                     <div className="flex items-center">
-                        <FieldLabel htmlFor="password">{auth.passwordLabel}</FieldLabel>
+                        <FieldLabel htmlFor={password.name}>{auth.passwordLabel}</FieldLabel>
                     </div>
                     <Input
+                        id={password.name}
+                        aria-invalid={errors.password ? true : undefined}
+                        aria-describedby={errors.password ? passwordError : undefined}
                         type="password"
                         autoComplete="current-password"
                         placeholder={auth.passwordPlaceholder}
                         disabled={isSubmitting}
-                        {...register("password")}
+                        {...password}
                         required
                     />
-                    <FieldError errors={[errors.password]}/>
+                    <FieldError id={passwordError} errors={[errors.password]}/>
                 </Field>
                 <Field>
                     <Button type="submit" disabled={isSubmitting || !isValid}>
-                        {isSubmitting ? <><Spinner data-icon="inline-start"/> {auth.submitting}</> : auth.login}
+                        {isSubmitting ?
+                            <>
+                                <Spinner
+                                    aria-hidden="true"
+                                    data-icon="inline-start"
+                                />
+                                {auth.submitting}
+                            </> : auth.login}
                     </Button>
                 </Field>
 
