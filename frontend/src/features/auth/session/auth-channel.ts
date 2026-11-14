@@ -1,5 +1,6 @@
 import {AuthMessage} from "@/features/auth/auth-types";
 import {useAuthStore} from "@/features/auth/session/auth-store";
+import {isAccessTokenUsable} from "@/features/auth/auth-jwt";
 
 
 /** Auth BroadcastChannel */
@@ -66,7 +67,7 @@ const handle = (message: AuthMessage) => {
             const {getAccessToken, getCsrfToken, getVersion} = useAuthStore.getState();
             const accessToken = getAccessToken();
             const csrfToken = getCsrfToken();
-            if (accessToken && csrfToken) {
+            if (accessToken && csrfToken && isAccessTokenUsable(accessToken)) {
                 authChannel?.postMessage({
                     type: "SESSION_RESPONSE",
                     requestId: message.requestId,
@@ -129,7 +130,7 @@ export const publishLogout = () => {
  */
 export const requestPeerSession = async (timeoutMs: number): Promise<string | null> => {
     const current = useAuthStore.getState().getAccessToken();
-    if (current) return Promise.resolve(current);
+    if (isAccessTokenUsable(current)) return Promise.resolve(current);
     if (!authChannel) return Promise.resolve(null);
 
     const requestId = crypto.randomUUID();
@@ -157,13 +158,13 @@ export const waitForVersion = (minVersion: number, timeoutMs: number): Promise<s
         let settled = false;
         let unsubscribe = () => {
         };
-        let timer: NodeJS.Timeout;
+        let timer: ReturnType<typeof setTimeout> | null = null;
 
         const finish = (token: string | null) => {
             if (settled) return;
             settled = true;
             unsubscribe();
-            clearTimeout(timer);
+            if (timer !== null) clearTimeout(timer);
             resolve(token);
         }
 

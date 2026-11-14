@@ -14,9 +14,12 @@ export const adminApiFetch = createApiFetch({
             headers.set("Authorization", `Bearer ${token}`);
             return {...init, headers};
         },
-        async recoverSession() {
+        async recoverSession(init) {
             try {
-                await ensureFreshToken();
+                const authorization = new Headers(init?.headers).get("Authorization");
+                const match = authorization?.match(/^Bearer\s+(.+)$/i);
+                const staleToken = match?.[1] ?? null;
+                await ensureFreshToken(staleToken);
                 return true;
             } catch {
                 return false;

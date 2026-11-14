@@ -1,7 +1,7 @@
 import {create} from "zustand";
 import {readEnvelop, writeEnvelope} from "./auth-storage";
 import {AuthState, AuthUser} from "@/features/auth/auth-types";
-import {decodeFromAccessToken} from "@/features/auth/auth-jwt";
+import {decodeFromAccessToken, isAccessTokenUsable} from "@/features/auth/auth-jwt";
 
 // 初始化 accessToken 一定是 null, version 和 csrfToken 从本地存储中读取
 // 模块在 SSR 阶段也会被求值，readEnvelope 有 canUseWindow 守卫 → 服务端恒为空信封
@@ -74,6 +74,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
      * Adopt session, 检查并储存会话
      */
     adoptSession: (nextToken, nextCsrf, peerVersion) => {
+        // 同伴可能空闲到 token 过期，不能把过期会话当成有效会话采纳
+        if (!isAccessTokenUsable(nextToken)) return;
         if (peerVersion < get().version) return;
         if (peerVersion < readEnvelop().version) return;
 

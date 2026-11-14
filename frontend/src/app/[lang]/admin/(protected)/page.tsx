@@ -13,8 +13,12 @@ export default function DashboardPage() {
         setPending(true);
         setError(null);
         try {
-            await logoutAdmin();
-            // 同样什么都不做：status → anonymous，<RequireAuth> 自动跳 /login
+            const result = await logoutAdmin();
+            // 成功后 publishLogout 会触发 RequireAuth 跳转，无需手动 navigate
+            if (!result.success) {
+                setError("退出失败，请重试。");
+                setPending(false);
+            }
         } catch {
             setError("退出失败，请重试。");
             setPending(false);
@@ -43,7 +47,7 @@ export default function DashboardPage() {
             <section className="rounded-xl border p-6">
                 <h2 className="text-lg font-medium">下一步</h2>
                 <p className="mt-2 text-sm text-muted-foreground">
-                    把 Vite 模板清掉，开始写真正的业务页面。
+                    业务页面。
                 </p>
             </section>
         </div>

@@ -6,6 +6,7 @@ import {LoginResponse} from "@/features/auth/auth-types";
 import {authRepository} from "@/features/auth/api/auth-client";
 import {publishLogout, publishSession} from "@/features/auth/session/auth-channel";
 import {ErrorCode, isTerminalSessionCode} from "@/lib/api/api-error-codes";
+import {safeApiCall} from "@/lib/api/safe-api-call";
 
 export const loginAdmin = (
     identifier: string,
@@ -19,39 +20,60 @@ export const loginAdmin = (
     return result;
 });
 
-export const logoutAdmin = (): Promise<ApiResult<null>> => withSessionLock(async () => {
-    const token = useAuthStore.getState().getAccessToken();
+const isTerminalSessionError = (error: unknown): boolean =>
+    error instanceof ApiError && isTerminalSessionCode(error.code);
 
-    if (!token) {
-        publishLogout();
-        return {success: true, data: null};
-    }
+/**
+ * 只有服务端确认撤销，或服务端明确表示会话已终止，才广播本地退出。
+ * 网络错误不能用“本地先退出”伪装成功，否则刷新页面可能被 Cookie 自动登录。
+ */
+export const logoutAdmin = (): Promise<ApiResult<null>> =>
+    safeApiCall<null>(() => withSessionLock(async () => {
+        let token = useAuthStore.getState().getAccessToken();
 
-    const result = await authRepository.logout(token);
-    if (result.success) {
-        publishLogout();
-        return result;
-    }
-
-    if (result.error instanceof ApiError) {
-        if (result.error.code === ErrorCode.AUTH_ACCESS_TOKEN_INVALID) {
+        // 内存没有 token，但 HttpOnly Refresh Cookie 可能仍然有效
+        if (!token) {
             try {
-                const fresh = await refreshInsideLock();
-                await authRepository.logout(fresh);
-            } catch {
-                // 刷新也失败了：会话已经不可用，直接清本地
+                token = await refreshInsideLock();
+            } catch (error) {
+                if (isTerminalSessionError(error)) return null;
+                throw error;
             }
-            publishLogout();
-            return {success: true, data: null};
         }
-        if (isTerminalSessionCode(result.error.code)) {
-            publishLogout();
-            return {success: true, data: null};
-        }
-    }
 
-    return result;
-});
+        const result = await authRepository.logout(token);
+        if (result.success) {
+            publishLogout();
+            return null;
+        }
+
+        if (isTerminalSessionError(result.error)) {
+            publishLogout();
+            return null;
+        }
+
+        if (!(result.error instanceof ApiError)
+            || result.error.code !== ErrorCode.AUTH_ACCESS_TOKEN_INVALID) {
+            throw result.error;
+        }
+
+        // Access Token 失效时只刷新并重试一次，避免退出流程无限循环
+        let freshToken: string;
+        try {
+            freshToken = await refreshInsideLock();
+        } catch (error) {
+            if (isTerminalSessionError(error)) return null;
+            throw error;
+        }
+
+        const retried = await authRepository.logout(freshToken);
+        if (retried.success || isTerminalSessionError(retried.error)) {
+            publishLogout();
+            return null;
+        }
+
+        throw retried.error;
+    }));
 
 let bootstrapTask: Promise<void> | null = null;
 let settled = false;

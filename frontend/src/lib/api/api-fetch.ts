@@ -10,7 +10,7 @@ export type ApiFetch = <T>(path: string, init?: RequestInit) => Promise<T | null
  */
 export type ApiFetchAuth = {
     beforeRequest?: (init: RequestInit) => RequestInit;
-    recoverSession?: () => Promise<boolean>
+    recoverSession?: (failedInit: RequestInit) => Promise<boolean>
 }
 
 /**
@@ -120,12 +120,16 @@ export function createApiFetch(
         const url = new URL(path, baseUrl);
 
         const request = async (current: RequestInit): Promise<T | null> => {
+            const headers = new Headers(current.headers);
+            if (!headers.has("Accept")) {
+                headers.set("Accept", "application/json");
+            }
             return parseResponse<T>(await fetch(url, {
                 ...buildCacheOptions(cache),
                 ...current,          // current 在后：endpoint 可整体覆盖 transport 缓存策略
                 signal: buildSignal(current, timeoutMs),
                 credentials,
-                headers: {Accept: "application/json", ...current.headers},
+                headers,
             }));
         }
 
@@ -139,7 +143,7 @@ export function createApiFetch(
             if (!isAccessTokenExpired(e) || !auth?.recoverSession) throw e;
 
             // 恢复失败就抛原错误
-            const recovered = await auth.recoverSession();
+            const recovered = await auth.recoverSession(attempt);
             if (!recovered) throw e;
 
             // 恢复成功 用新 token 重建 init 重放一次
