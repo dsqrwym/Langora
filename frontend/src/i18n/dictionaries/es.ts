@@ -83,7 +83,7 @@ const es: Dictionary = {
                 translation: "Repasar lo antiguo y comprender lo nuevo: así se llega a ser maestro.",
                 source: "Confucio, Analectas",
             },
-            "brush-child": {
+            "first-brushstroke": {
                 original: "幼而学者，如日出之光。",
                 translation: "Aprender en la infancia es como la luz del amanecer.",
                 source: "Yan Zhitui, Admoniciones de la familia Yan",
