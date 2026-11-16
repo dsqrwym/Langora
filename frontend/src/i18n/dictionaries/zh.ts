@@ -43,6 +43,54 @@ const zh = {
             passwordRequired: "请输入有效的密码",
             passwordTooLong: "密码过长（最多 {max} 字节）",
         },
+
+        loginQuotes: {
+            default: {
+                original: "母语是回家的路。",
+                translation: "",
+                source: "Langora",
+            },
+            "ink-and-paper": {
+                original: "读书破万卷，下笔如有神。",
+                translation: "",
+                source: "杜甫《奉赠韦左丞丈二十二韵》",
+            },
+            "jade-artisan": {
+                original: "玉不琢，不成器；人不学，不知道。",
+                translation: "",
+                source: "《礼记·学记》",
+            },
+            "long-road": {
+                original: "千里之行，始于足下。",
+                translation: "",
+                source: "老子《道德经》",
+            },
+            "tea-ceremony": {
+                original: "三人行，必有我师焉。",
+                translation: "",
+                source: "孔子《论语》",
+            },
+            "bonsai-pruning": {
+                original: "教也者，长善而救其失者也。",
+                translation: "",
+                source: "《礼记·学记》",
+            },
+            "go-board": {
+                original: "不积跬步，无以至千里。",
+                translation: "",
+                source: "荀子《劝学》",
+            },
+            "thread-bound-book": {
+                original: "温故而知新，可以为师矣。",
+                translation: "",
+                source: "孔子《论语》",
+            },
+            "first-brushstroke": {
+                original: "幼而学者，如日出之光。",
+                translation: "",
+                source: "颜之推《颜氏家训》",
+            },
+        },
     },
 };
 export default zh;

@@ -41,6 +41,54 @@ const en: Dictionary = {
             passwordRequired: "Enter a valid password",
             passwordTooLong: "Password is too long (max {max} bytes)",
         },
+
+        loginQuotes: {
+            default: {
+                original: "母语是回家的路。",
+                translation: "A mother tongue is the road home.",
+                source: "Langora",
+            },
+            "ink-and-paper": {
+                original: "读书破万卷，下笔如有神。",
+                translation: "After reading ten thousand books, the brush moves as if alive.",
+                source: "Du Fu",
+            },
+            "jade-artisan": {
+                original: "玉不琢，不成器；人不学，不知道。",
+                translation: "Uncut jade never becomes a vessel; an unlearned mind never finds the way.",
+                source: "Book of Rites",
+            },
+            "long-road": {
+                original: "千里之行，始于足下。",
+                translation: "A journey of a thousand li begins beneath your feet.",
+                source: "Laozi, Tao Te Ching",
+            },
+            "tea-ceremony": {
+                original: "三人行，必有我师焉。",
+                translation: "Among any three people, one is my teacher.",
+                source: "Confucius, Analects",
+            },
+            "bonsai-pruning": {
+                original: "教也者，长善而救其失者也。",
+                translation: "To teach is to nurture what is good and mend what is lacking.",
+                source: "Book of Rites",
+            },
+            "go-board": {
+                original: "不积跬步，无以至千里。",
+                translation: "Without small steps, there is no thousand-li road.",
+                source: "Xunzi, On Learning",
+            },
+            "thread-bound-book": {
+                original: "温故而知新，可以为师矣。",
+                translation: "Revising the old to understand the new — that is how one becomes a teacher.",
+                source: "Confucius, Analects",
+            },
+            "first-brushstroke": {
+                original: "幼而学者，如日出之光。",
+                translation: "To learn in childhood is like the light of sunrise.",
+                source: "Yan Zhitui, Family Instructions of the Yan Clan",
+            },
+        },
     },
 };
 
