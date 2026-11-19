@@ -8,9 +8,9 @@ import {Input} from "@/components/ui/input"
 import * as React from "react";
 import {useEffect, useRef, useState} from "react";
 import {Spinner} from "@/components/ui/spinner";
-import {Dictionary} from "@/i18n/dictionaries/zh";
-import {createLoginSchema, LoginFormValues} from "@/features/auth/auth-schemas";
-import {useForm} from "react-hook-form";
+import {type Dictionary} from "@/i18n/dictionaries/zh";
+import {createLoginSchema, type LoginFormValues} from "@/features/auth/auth-schemas";
+import {useForm, useWatch} from "react-hook-form";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {authRepository} from "@/features/auth/api/auth-client";
 import {showErrorToast} from "@/lib/toast-manager";
@@ -37,7 +37,7 @@ export function LoginForm(
     const schema = createLoginSchema(dictionary);
 
     const {
-        watch, register, handleSubmit, setError, setFocus,
+        control, register, handleSubmit, setError, setFocus,
         formState: {errors, isSubmitting, isValid}
     } = useForm<LoginFormValues>({
         resolver: zodResolver(schema),
@@ -50,7 +50,7 @@ export function LoginForm(
     const captchaSlot = useRef<HTMLDivElement | null>(null);
     const captchaWidget = useRef<string | null>(null);
 
-    const isEmail = watch("identifier").includes("@");
+    const isEmail = useWatch({control, name: "identifier"})?.includes("@");
     // React 把 disabled 写进 DOM 之前连点两下会双触发 而 ref 读写立即生效
     const submittingRef = useRef(false);
 
@@ -99,6 +99,7 @@ export function LoginForm(
     }, [captchaRequired, dictionary]);
 
 
+    // eslint-disable-next-line react-hooks/refs
     const onSubmit = handleSubmit(async ({identifier, password}) => {
         if (submittingRef.current) return;
         submittingRef.current = true;
