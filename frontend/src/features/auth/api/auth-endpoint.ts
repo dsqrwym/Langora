@@ -1,5 +1,5 @@
-import {ApiFetch} from "@/lib/api/api-fetch";
-import {CaptchaConfigResponse, LoginRequest, LoginResponse, RefreshTokenResponse} from "@/features/auth/auth-types";
+import {type ApiFetch} from "@/lib/api/api-fetch";
+import {type CaptchaConfigResponse, type LoginRequest, type LoginResponse, type RefreshTokenResponse} from "@/features/auth/auth-types";
 
 export const CSRF_HEADER = "X-XSRF-TOKEN";
 

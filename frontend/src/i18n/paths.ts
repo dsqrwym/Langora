@@ -6,6 +6,7 @@ import {
     type SupportedLanguage,
 } from "@/i18n/languages";
 import {readPreferredLanguage} from "@/i18n/locale-preference";
+import type {Route} from "next";
 
 const getLanguageFromPathname = (pathname: string): SupportedLanguage | null => {
     const first = pathname.split("/")[1] ?? "";
@@ -19,22 +20,22 @@ export const stripLanguagePrefix = (pathname: string): string => {
     return rest === "" ? "/" : rest;
 };
 
-export const buildLocalizedPath = (lang: SupportedLanguage, path: string): string => {
+export const buildLocalizedPath = (lang: SupportedLanguage, path: string): Route => {
     const clean = path.startsWith("/") ? path : `/${path}`;
-    return clean === "/" ? `/${lang}` : `/${lang}${clean}`;
+    return clean === "/" ? `/${lang}` as Route : `/${lang}${clean}` as Route;
 };
 
 export const replaceLanguagePrefix = (
     pathname: string,
     next: SupportedLanguage,
-): string => {
+): Route => {
     const segments = pathname.split("/").filter(Boolean);
     if (segments.length > 0 && isSupportedLanguage(segments[0])) {
         segments[0] = next;
     } else {
         segments.unshift(next);
     }
-    return `/${segments.join("/")}`;
+    return `/${segments.join("/")}` as Route;
 };
 
 /**

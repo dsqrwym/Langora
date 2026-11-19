@@ -1,6 +1,6 @@
 import {showErrorToast, TOAST_DURATION} from "@/lib/toast-manager";
-import {Dictionary, formatMessage} from "@/i18n";
-import {ApiError, AppError} from "@/lib/api/api-types";
+import {type Dictionary, formatMessage} from "@/i18n";
+import {ApiError, type AppError} from "@/lib/api/api-types";
 import {getCommonErrorString} from "@/lib/api/api-error-i18n";
 
 export const reportError = (error: AppError, dictionary: Dictionary): void => {

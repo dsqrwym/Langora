@@ -1,8 +1,8 @@
 import {useAuthStore} from "@/features/auth/session/auth-store";
 import {ensureFreshToken, refreshInsideLock, withSessionLock} from "@/features/auth/session/auth-refresh-lock";
 import {useEffect} from "react";
-import {ApiError, ApiResult} from "@/lib/api/api-types";
-import {LoginResponse} from "@/features/auth/auth-types";
+import {ApiError, type ApiResult} from "@/lib/api/api-types";
+import {type LoginResponse} from "@/features/auth/auth-types";
 import {authRepository} from "@/features/auth/api/auth-client";
 import {publishLogout, publishSession} from "@/features/auth/session/auth-channel";
 import {ErrorCode, isTerminalSessionCode} from "@/lib/api/api-error-codes";

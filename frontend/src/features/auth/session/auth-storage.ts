@@ -1,5 +1,5 @@
 import {canUseWindow} from "@/lib/device";
-import {SessionEnvelop} from "@/features/auth/auth-types";
+import {type SessionEnvelop} from "@/features/auth/auth-types";
 
 /** Auth localStorage envelope key */
 const AUTH_ENVELOPE_KEY = "langora.auth.envelope";

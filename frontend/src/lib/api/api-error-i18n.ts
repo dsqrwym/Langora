@@ -1,6 +1,6 @@
-import {ApiError, AppError, InvalidResponseError, NetworkError, RequestTimeoutError} from "@/lib/api/api-types";
+import {ApiError, type AppError, InvalidResponseError, NetworkError, RequestTimeoutError} from "@/lib/api/api-types";
 import {ErrorCode} from "@/lib/api/api-error-codes";
-import {Dictionary} from "@/i18n";
+import {type Dictionary} from "@/i18n";
 
 /**
  * 获取通用错误字符串 如果为空则不是通用错误

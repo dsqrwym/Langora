@@ -1,4 +1,4 @@
-import {Dictionary} from "@/i18n/dictionaries/zh";
+import {type Dictionary} from "@/i18n/dictionaries/zh";
 import {z} from "zod";
 import {
     ADMIN_USERNAME_INVALID_CHARS,

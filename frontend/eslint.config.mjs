@@ -9,13 +9,22 @@ const eslintConfig = defineConfig([
   globalIgnores([
     // Default ignores of eslint-config-next:
     ".next/**",
+    ".temp",
+    ".tmp/**",
+    ".idea",
     "out/**",
     "build/**",
     "next-env.d.ts",
+    "node_modules",
     // 迁移期的旧工程与脚手架副本
     "vite/**",
     "temp/**",
   ]),
+  {
+    rules: {
+      "@typescript-eslint/consistent-type-imports": ["error", {fixStyle: "inline-type-imports"}]
+    }
+  }
 ]);
 
 export default eslintConfig;

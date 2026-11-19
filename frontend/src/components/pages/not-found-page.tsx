@@ -7,7 +7,8 @@ import {ArrowLeft, Home} from "lucide-react";
 import {cn} from "cn";
 import {Button, buttonVariants} from "@/components/ui/button";
 import {stripLanguagePrefix} from "@/i18n/paths";
-import {NotFoundMessages} from "@/i18n/not-found-messages";
+import {type NotFoundMessages} from "@/i18n/not-found-messages";
+import type {Route} from "next";
 
 type FieldNode = {
     x: number;
@@ -434,7 +435,7 @@ const NodeField = ({className}: NodeFieldProps) => {
 
 type NotFoundPageProps = {
     /** 返回首页按钮（以及快捷键 H、无历史时的兜底）的目标地址 */
-    homePath: string;
+    homePath: Route;
     /** 404 文案：三语小字典同步加载，保证错误页首帧即正确语言 */
     messages: NotFoundMessages;
 };
@@ -488,7 +489,7 @@ export const NotFoundPage = ({homePath, messages}: NotFoundPageProps) => {
             <NodeField className="pointer-events-none absolute inset-0 z-0 size-full"/>
 
             {/* 边缘淡出，让中心更聚焦 */}
-            <div aria-hidden="true" className="nf-vignette pointer-events-none absolute inset-0 z-[1]"/>
+            <div aria-hidden="true" className="nf-vignette pointer-events-none absolute inset-0 z-1"/>
 
             <div
                 className="relative z-10 flex flex-1 flex-col items-center justify-center px-6 py-8 text-center sm:py-10">

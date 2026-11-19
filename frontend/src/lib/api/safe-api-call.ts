@@ -1,7 +1,7 @@
 import {
     ApiError,
-    ApiResult,
-    AppError,
+    type ApiResult,
+    type AppError,
     InvalidResponseError,
     NetworkError,
     RequestTimeoutError,

@@ -1,5 +1,5 @@
 
-import {ApiError, ApiResponse, InvalidResponseError} from "@/lib/api/api-types";
+import {ApiError, type ApiResponse, InvalidResponseError} from "@/lib/api/api-types";
 import {ErrorCode} from "@/lib/api/api-error-codes";
 import {DEFAULT_TIMEOUT_MS, SUCCESS_CODES} from "@/lib/api/api-config";
 

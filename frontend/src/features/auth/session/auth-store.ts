@@ -1,6 +1,6 @@
 import {create} from "zustand";
 import {readEnvelop, writeEnvelope} from "./auth-storage";
-import {AuthState, AuthUser} from "@/features/auth/auth-types";
+import {type AuthState, type AuthUser} from "@/features/auth/auth-types";
 import {decodeFromAccessToken, isAccessTokenUsable} from "@/features/auth/auth-jwt";
 
 // 初始化 accessToken 一定是 null, version 和 csrfToken 从本地存储中读取

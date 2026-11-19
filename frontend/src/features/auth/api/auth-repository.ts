@@ -1,4 +1,4 @@
-import {AuthEndpoints} from "@/features/auth/api/auth-endpoint";
+import {type AuthEndpoints} from "@/features/auth/api/auth-endpoint";
 import {safeApiCall} from "@/lib/api/safe-api-call";
 import {getOrCreateDeviceUuid} from "@/lib/device";
 import {InvalidResponseError} from "@/lib/api/api-types";

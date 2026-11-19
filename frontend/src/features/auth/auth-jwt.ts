@@ -1,5 +1,5 @@
 import {jwtDecode} from "jwt-decode";
-import {AuthUser} from "@/features/auth/auth-types";
+import {type AuthUser} from "@/features/auth/auth-types";
 
 type AccessTokenPayload = AuthUser & {
     exp?: number;

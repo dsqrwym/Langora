@@ -1,4 +1,4 @@
-import {AuthMessage} from "@/features/auth/auth-types";
+import {type AuthMessage} from "@/features/auth/auth-types";
 import {useAuthStore} from "@/features/auth/session/auth-store";
 import {isAccessTokenUsable} from "@/features/auth/auth-jwt";
 

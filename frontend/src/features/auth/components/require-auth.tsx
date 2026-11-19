@@ -1,13 +1,13 @@
 "use client"
 
-import React, {useEffect} from "react";
+import React, {type PropsWithChildren, useEffect} from "react";
 import {useAuth} from "@/features/auth";
 import {useParams, useRouter} from "next/navigation";
 import {useSessionBootstrap} from "@/features/auth/session/auth-session";
 import {buildLocalizedPath, getLanguageOrDefault, isSupportedLanguage} from "@/i18n";
 import {FullScreenLoader} from "@/components/ui/full-screen-loader";
 
-export function RequireAuth({children, loadingLabel}: { children: React.ReactNode, loadingLabel: string }) {
+export function RequireAuth({children, loadingLabel}: PropsWithChildren<{ loadingLabel: string }>) {
     const {status} = useAuth();
     const router = useRouter();
     const {lang} = useParams<{ lang: string }>();

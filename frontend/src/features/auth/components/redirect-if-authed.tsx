@@ -1,12 +1,13 @@
 "use client"
 
-import React, {useEffect} from "react";
+import React, {type PropsWithChildren, useEffect} from "react";
 import {useAuth} from "@/features/auth";
 import {useParams, useRouter} from "next/navigation";
 import {useSessionBootstrap} from "@/features/auth/session/auth-session";
 import {buildLocalizedPath, getLanguageOrDefault, isSupportedLanguage} from "@/i18n";
+import type {Route} from "next";
 
-export function RedirectIfAuthed({children}: { children: React.ReactNode }) {
+export function RedirectIfAuthed({children}: PropsWithChildren) {
     const {status} = useAuth();
     const router = useRouter();
     const {lang} = useParams<{ lang: string }>();
@@ -22,7 +23,7 @@ export function RedirectIfAuthed({children}: { children: React.ReactNode }) {
             ? callbackUrl
             : buildLocalizedPath(isSupportedLanguage(lang) ? lang : getLanguageOrDefault(), "/admin");
 
-        router.replace(target);
+        router.replace(target as Route);
 
     }, [status, lang, router]);
     return <>{children}</>;
