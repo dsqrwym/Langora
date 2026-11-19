@@ -3,6 +3,12 @@ import type {Dictionary} from "./zh";
 const es: Dictionary = {
     common: {
         loading: "Cargando",
+        theme: {
+            light: "Claro",
+            dark: "Oscuro",
+            system: "Seguir el sistema",
+            current: "Tema actual: {theme} (haz clic para cambiar)",
+        },
         errors: {
             network: "No se puede conectar. Comprueba tu conexión e inténtalo de nuevo.",
             timeout: "El servidor ha tardado demasiado en responder. Inténtalo de nuevo.",
@@ -17,6 +23,12 @@ const es: Dictionary = {
             unexpected: "Algo ha salido mal. Inténtalo de nuevo.",
             errorCode: "Código de error: {code}",
         },
+    },
+    admin: {
+        title: "Administración",
+    },
+    site: {
+        nav: {home: "Inicio", courses: "Cursos", news: "Noticias", about: "Sobre nosotros"},
     },
     auth: {
         login: "Iniciar sesión",

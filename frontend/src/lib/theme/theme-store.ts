@@ -1,32 +1,37 @@
 import type {ResolvedTheme, ThemePreference, ThemeState} from "@/lib/theme/theme-types";
 import {create} from "zustand";
 import {canUseDom} from "@/lib/device";
-import {DARK_QUERY, THEME_COLOR, THEME_STORAGE_KEY} from "@/lib/theme/theme-constants";
+import {DARK_QUERY, THEME_COLOR, THEME_PREFERENCE_ATTRIBUTE, THEME_STORAGE_KEY} from "@/lib/theme/theme-constants";
 
 export {THEME_STORAGE_KEY};
 
-export const getSystemTheme = (): ResolvedTheme => {
+const getSystemTheme = (): ResolvedTheme => {
     return canUseDom() && window.matchMedia(DARK_QUERY).matches ? "dark" : "light";
 };
 
-export const resolveTheme = (preference: ThemePreference): ResolvedTheme => {
+const resolveTheme = (preference: ThemePreference): ResolvedTheme => {
     return preference === "system" ? getSystemTheme() : preference;
 };
 
-export const applyTheme = (resolved: ResolvedTheme) => {
-    if (!canUseDom()) return;
+const applyTheme = (preference: ThemePreference) => {
+    const resolved = resolveTheme(preference);
+    if (!canUseDom()) return resolved;
 
     const root = document.documentElement;
     // remove or add to change shadcn-ui class
     root.classList.toggle("dark", resolved === "dark");
     // change system theme
     root.style.colorScheme = resolved;
+    // change css variable
+    root.setAttribute(THEME_PREFERENCE_ATTRIBUTE, preference);
 
     const meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
     if (meta) meta.content = THEME_COLOR[resolved];
+
+    return resolved;
 }
 
-export const readStoredTheme = (): ThemePreference => {
+const readStoredTheme = (): ThemePreference => {
     if (!canUseDom()) return "system";
 
     try {
@@ -46,24 +51,24 @@ const writeStoredTheme = (preference: ThemePreference): void => {
     }
 };
 
-const initialTheme = readStoredTheme();
-
-// 文件加载即生效，index.html 内联让其更早生效
-applyTheme(resolveTheme(initialTheme));
-
 export const useThemeStore = create<ThemeState>((set, get) => ({
-    preference: initialTheme,
-    resolvedTheme: resolveTheme(initialTheme),
+    // 初始值必须与 SSR 一致：服务端读不到 localStorage，只能用 system/light。
+    preference: "system",
+    resolvedTheme: "light",
     setPreference: (preference) => {
-        const resolvedTheme = resolveTheme(preference);
+        const resolvedTheme = applyTheme(preference);
         writeStoredTheme(preference);
-        applyTheme(resolvedTheme);
+        set({preference, resolvedTheme});
+    },
+    // 浏览器显示由 内联脚本 + CSS 实现，真实偏好由 ThemeInit 在 hydration 后通过 hydrate() 写入，避免首帧不一致
+    hydrate: () => {
+        const preference = readStoredTheme();
+        const resolvedTheme = applyTheme(preference);
         set({preference, resolvedTheme});
     },
     syncSystemTheme: () => {
         if (get().preference !== "system") return;
-        const resolvedTheme = getSystemTheme();
-        applyTheme(resolvedTheme);
+        const resolvedTheme = applyTheme("system");
         set({resolvedTheme});
     },
 }));
@@ -78,8 +83,7 @@ if (canUseDom()) {
         // key === null 表示其它标签页执行了 localStorage.clear()，此时偏好回落为 system
         if (event.key !== null && event.key !== THEME_STORAGE_KEY) return;
         const preference = readStoredTheme();
-        const resolvedTheme = resolveTheme(preference);
-        applyTheme(resolvedTheme);
+        const resolvedTheme = applyTheme(preference);
         useThemeStore.setState({preference, resolvedTheme});
     });
 }

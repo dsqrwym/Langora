@@ -1,6 +1,6 @@
 import {LoginForm} from "@/features/auth/components/login-form"
 import {UserRoundShield} from "lucide-react"
-import {getDictionary, SupportedLanguage} from "@/i18n";
+import {getDictionary, type SupportedLanguage} from "@/i18n";
 import {RedirectIfAuthed} from "@/features/auth/components/redirect-if-authed";
 import {
     buildLoginPhotos,
@@ -9,8 +9,16 @@ import {
     LOGIN_QUOTE_BODY_ROLE
 } from "@/features/auth/login-photo-script";
 import {InlineScript} from "@/components/common/inline-script";
+import {type Metadata} from "next";
 
-export default async function AdminLoginPage({params}: { params: Promise<{ lang: string }> }) {
+export async function generateMetadata({params}: PageProps<'/[lang]/admin/login'>): Promise<Metadata> {
+    const {lang} = await params;
+    const dictionary = await getDictionary(lang as SupportedLanguage);
+
+    return {title: dictionary.auth.login};
+}
+
+export default async function AdminLoginPage({params}: PageProps<'/[lang]/admin/login'>) {
     const {lang} = await params;
     const dictionary = await getDictionary(lang as SupportedLanguage);
     const photos = buildLoginPhotos(dictionary);
@@ -22,16 +30,18 @@ export default async function AdminLoginPage({params}: { params: Promise<{ lang:
     return (
         <div className="grid min-h-svh lg:grid-cols-2">
             <figure className="relative hidden min-h-svh overflow-hidden bg-muted lg:block">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                     id={LOGIN_PHOTO_ID}
                     src={fallback?.src}
                     alt={fallback?.alt ?? ""}
+                    fetchPriority="high" // "In most cases, you should use loading="eager" or fetchPriority="high" instead of preload." from next document
                     suppressHydrationWarning
                     className="absolute inset-0 size-full object-cover dark:brightness-[0.55] dark:saturate-[0.9]"
                 />
                 {/* 轻度压暗：玻璃板本身已经可读，这层只让照片下半部不刺眼 */}
                 <div
-                    className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/45 via-black/10 to-transparent"/>
+                    className="pointer-events-none absolute inset-0 bg-linear-to-t from-black/45 via-black/10 to-transparent"/>
                 <figcaption
                     className="absolute inset-x-6 bottom-6"
                 >
@@ -60,7 +70,7 @@ export default async function AdminLoginPage({params}: { params: Promise<{ lang:
                 <InlineScript id="login-photo-script" html={buildLoginPhotoScript(photos)}/>
             </figure>
             <div
-                className="pointer-events-none absolute inset-y-0 right-0 w-32 bg-gradient-to-l from-background via-background/60 to-transparent"
+                className="pointer-events-none absolute inset-y-0 right-0 w-32 bg-linear-to-l from-background via-background/60 to-transparent"
             />
             <div className="flex flex-col gap-4 p-6 md:p-10">
                 <div className="flex justify-center gap-2 md:justify-start">

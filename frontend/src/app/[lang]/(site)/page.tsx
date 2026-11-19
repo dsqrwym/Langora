@@ -3,11 +3,7 @@ import {notFound} from "next/navigation";
 import {LANGUAGE_LABELS, SUPPORTED_LANGUAGES, isSupportedLanguage} from "@/i18n/languages";
 import {buildLocalizedPath} from "@/i18n/paths";
 
-type HomePageProps = {
-    params: Promise<{lang: string}>;
-};
-
-export default async function HomePage({params}: HomePageProps) {
+export default async function HomePage({params}: PageProps<'/[lang]'>) {
     const {lang} = await params;
 
     if (!isSupportedLanguage(lang)) {

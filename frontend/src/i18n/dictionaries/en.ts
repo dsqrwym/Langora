@@ -1,8 +1,14 @@
-import {Dictionary} from "@/i18n/dictionaries/zh";
+import {type Dictionary} from "@/i18n/dictionaries/zh";
 
 const en: Dictionary = {
     common: {
         loading: "Loading",
+        theme: {
+            light: "Light",
+            dark: "Dark",
+            system: "Follow system",
+            current: "Current theme: {theme} (click to switch)",
+        },
         errors: {
             network: "Can't connect. Check your connection and try again.",
             timeout: "The server took too long to respond. Try again.",
@@ -17,6 +23,12 @@ const en: Dictionary = {
             unexpected: "Something went wrong. Try again.",
             errorCode: "Error code: {code}",
         },
+    },
+    admin: {
+        title: "Admin",
+    },
+    site: {
+        nav: {home: "Home", courses: "Courses", news: "News", about: "About"},
     },
     auth: {
         login: "Sign in",

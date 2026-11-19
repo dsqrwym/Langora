@@ -1,0 +1,25 @@
+@layer components{
+    [data-theme-icon] {
+        position: absolute;
+        inset: 0;
+        margin: auto;
+        opacity: 0;
+        scale: 0;
+        rotate: -90deg;
+        pointer-events: none;
+        /* 等价于 Tailwind 的 transition-all duration-300 */
+        transition-property: all;
+        transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+        transition-duration: 300ms;
+    }
+
+    /* :not fallback 用于脚本被禁用/失败时按默认偏好 system 显示 */
+    html:not([data-theme-preference]) [data-theme-icon="system"],
+    html[data-theme-preference="system"] [data-theme-icon="system"],
+    html[data-theme-preference="light"] [data-theme-icon="light"],
+    html[data-theme-preference="dark"] [data-theme-icon="dark"] {
+        opacity: 1;
+        scale: 1;
+        rotate: 0deg;
+    }
+}

@@ -1,4 +1,4 @@
-import {DARK_QUERY, THEME_COLOR, THEME_STORAGE_KEY} from "@/lib/theme/theme-constants";
+import {DARK_QUERY, THEME_COLOR, THEME_PREFERENCE_ATTRIBUTE, THEME_STORAGE_KEY} from "@/lib/theme/theme-constants";
 import {toInlineScriptWithArgs} from "@/lib/inline-script";
 
 /**
@@ -18,10 +18,11 @@ import {toInlineScriptWithArgs} from "@/lib/inline-script";
  }catch(e){}})()`;
  */
 
-function applyInitialTheme({storageKey, darkQuery, color}: {
+function applyInitialTheme({storageKey, darkQuery, color, preferenceAttribute}: {
     storageKey: string,
     darkQuery: string,
-    color: Record<string, string>
+    color: Record<string, string>,
+    preferenceAttribute: string,
 }) {
     try {
         const stored = localStorage.getItem(storageKey);
@@ -32,6 +33,7 @@ function applyInitialTheme({storageKey, darkQuery, color}: {
         const root = document.documentElement;
         root.classList.toggle("dark", resolved === "dark");
         root.style.colorScheme = resolved;
+        root.setAttribute(preferenceAttribute, preference);
 
         const meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
         if (meta) meta.content = color[resolved] ?? meta.content;
@@ -42,4 +44,5 @@ export const THEME_INIT_SCRIPT = toInlineScriptWithArgs(applyInitialTheme, {
     storageKey: THEME_STORAGE_KEY,
     darkQuery: DARK_QUERY,
     color: THEME_COLOR,
+    preferenceAttribute: THEME_PREFERENCE_ATTRIBUTE,
 });

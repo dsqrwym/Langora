@@ -1,0 +1,139 @@
+@keyframes nf-rise {
+    from {
+        opacity: 0;
+        transform: translateY(18px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes nf-glass-shine {
+    0%, 100% {
+        opacity: 0.7;
+        transform: translate3d(-4%, -3%, 0) scale(1);
+    }
+    50% {
+        opacity: 1;
+        transform: translate3d(4%, 3%, 0) scale(1.08);
+    }
+}
+
+@layer components {
+    .nf-vignette {
+        background: radial-gradient(
+                ellipse at 50% 45%,
+                transparent 20%,
+                color-mix(in oklch, var(--background) 55%, transparent) 62%,
+                var(--background) 92%
+        );
+    }
+
+    /* 单层玻璃字：只做一层填充和描边，避免叠字 */
+    .nf-404 {
+        color: transparent;
+        background-image: linear-gradient(
+                180deg,
+                var(--foreground) 0%,
+                color-mix(in oklch, var(--foreground) 55%, var(--background)) 100%
+        );
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-stroke: 1px color-mix(in oklch, var(--foreground) 24%, transparent);
+    }
+
+    .dark .nf-404 {
+        -webkit-text-stroke-color: color-mix(in oklch, var(--foreground) 32%, transparent);
+    }
+
+    @media (min-width: 640px) {
+        .nf-404 {
+            -webkit-text-stroke-width: 1.5px;
+        }
+    }
+
+    /* Apple 风玻璃板：模糊在子层做，颜色/高光在模糊之上单独叠一层 */
+    .nf-glass {
+        box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.42),
+        inset 0 -1px 0 rgb(0 0 0 / 0.16),
+        inset 0 0 32px rgb(255 255 255 / 0.04),
+        0 14px 30px -18px rgb(0 0 0 / 0.35);
+        overflow: hidden;
+    }
+
+    /* 玻璃底色只叠一次，避免被多层 backdrop 重复染色 */
+    .nf-glass-tint {
+        position: absolute;
+        inset: 0;
+        z-index: 2;
+        border-radius: inherit;
+        background: linear-gradient(
+                145deg,
+                color-mix(in oklch, var(--foreground) 12%, transparent) 0%,
+                color-mix(in oklch, var(--foreground) 5%, transparent) 38%,
+                color-mix(in oklch, var(--foreground) 3%, transparent) 62%,
+                color-mix(in oklch, var(--foreground) 8%, transparent) 100%
+        );
+        pointer-events: none;
+    }
+
+    /* 渐进模糊：外缘 0，向内递增，到 404 文字边缘达到最大 */
+    .nf-glass-blur {
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+        border-radius: inherit;
+        pointer-events: none;
+    }
+
+    .nf-glass-blur-1 {
+        -webkit-backdrop-filter: blur(2.5px);
+        backdrop-filter: blur(2.5px);
+        -webkit-mask-image: radial-gradient(ellipse 50% 50% at 50% 50%, #000 0%, #000 88%, transparent 100%);
+        mask-image: radial-gradient(ellipse 50% 50% at 50% 50%, #000 0%, #000 88%, transparent 100%);
+    }
+
+    .nf-glass-blur-2 {
+        -webkit-backdrop-filter: blur(4.5px);
+        backdrop-filter: blur(4.5px);
+        -webkit-mask-image: radial-gradient(ellipse 50% 50% at 50% 50%, #000 0%, #000 78%, transparent 100%);
+        mask-image: radial-gradient(ellipse 50% 50% at 50% 50%, #000 0%, #000 78%, transparent 100%);
+    }
+
+    .nf-glass-blur-3 {
+        -webkit-backdrop-filter: blur(6.5px);
+        backdrop-filter: blur(6.5px);
+        -webkit-mask-image: radial-gradient(ellipse 50% 50% at 50% 50%, #000 0%, #000 68%, transparent 100%);
+        mask-image: radial-gradient(ellipse 50% 50% at 50% 50%, #000 0%, #000 68%, transparent 100%);
+    }
+
+    .nf-glass::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        z-index: 3;
+        border-radius: inherit;
+        background: linear-gradient(115deg, transparent 30%, rgb(255 255 255 / 0.1) 45%, transparent 58%),
+        radial-gradient(80% 60% at 18% -10%, rgb(255 255 255 / 0.28), transparent 65%),
+        radial-gradient(60% 50% at 88% 110%, rgb(255 255 255 / 0.08), transparent 70%);
+        animation: nf-glass-shine 9s ease-in-out infinite;
+        pointer-events: none;
+    }
+
+    /* 极淡的磨砂噪点，避免玻璃看起来像纯色卡片 */
+    .nf-glass::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        z-index: 4;
+        border-radius: inherit;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E");
+        opacity: 0.04;
+        pointer-events: none;
+    }
+
+    .nf-rise {
+        animation: nf-rise 900ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+}

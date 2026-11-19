@@ -1,6 +1,13 @@
 const zh = {
     common: {
         loading: "加载中",
+        /** 主题切换器文案：{theme} 为当前主题标签，由 formatMessage 展开 */
+        theme: {
+            light: "亮色模式",
+            dark: "深色模式",
+            system: "跟随系统",
+            current: "当前主题：{theme}（点击切换）",
+        },
         errors: {
             network: "网络连接失败，请检查网络后重试",
             timeout: "响应超时，请稍后重试",
@@ -17,6 +24,17 @@ const zh = {
             unexpected: "出了点问题，请稍后重试",
 
             errorCode: "错误代码：{code}",
+        },
+    },
+    admin: {
+        title: "后台",
+    },
+    site: {
+        nav: {
+            home: "首页",
+            courses: "课程",
+            news: "新闻",
+            about: "关于",
         },
     },
     auth: {
