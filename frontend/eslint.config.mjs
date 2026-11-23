@@ -15,6 +15,7 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    "src/i18n/messages/*.d.json.ts",
     "node_modules",
     // 迁移期的旧工程与脚手架副本
     "vite/**",
