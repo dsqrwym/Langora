@@ -3,11 +3,12 @@ export {
     DEFAULT_LANGUAGE,
     LANGUAGE_COOKIE_NAME,
     LANGUAGE_LABELS,
+    LOCALE_CONFIG,
     isSupportedLanguage,
     detectBrowserLanguage,
     pickLanguageFromAcceptLanguage,
 } from "@/i18n/languages";
-export type {SupportedLanguage} from "@/i18n/languages";
+export type {LocaleMeta, SupportedLanguage} from "@/i18n/languages";
 
 export {
     buildLocalizedPath,

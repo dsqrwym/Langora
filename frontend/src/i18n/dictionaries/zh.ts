@@ -8,6 +8,10 @@ const zh = {
             system: "跟随系统",
             current: "当前主题：{theme}（点击切换）",
         },
+        /** 语言切换器文案：{language} 为当前语言标签，由 formatMessage 展开 */
+        language: {
+            switch: "当前语言：{language}，切换语言",
+        },
         errors: {
             network: "网络连接失败，请检查网络后重试",
             timeout: "响应超时，请稍后重试",

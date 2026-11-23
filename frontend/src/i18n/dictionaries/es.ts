@@ -9,6 +9,9 @@ const es: Dictionary = {
             system: "Seguir el sistema",
             current: "Tema actual: {theme} (haz clic para cambiar)",
         },
+        language: {
+            switch: "Idioma actual: {language}, cambiar idioma",
+        },
         errors: {
             network: "No se puede conectar. Comprueba tu conexión e inténtalo de nuevo.",
             timeout: "El servidor ha tardado demasiado en responder. Inténtalo de nuevo.",

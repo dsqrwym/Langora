@@ -1,10 +1,5 @@
 import {canUseWindow} from "@/lib/device";
-import {
-    DEFAULT_LANGUAGE,
-    detectBrowserLanguage,
-    isSupportedLanguage,
-    type SupportedLanguage,
-} from "@/i18n/languages";
+import {DEFAULT_LANGUAGE, detectBrowserLanguage, isSupportedLanguage, type SupportedLanguage,} from "@/i18n/languages";
 import {readPreferredLanguage} from "@/i18n/locale-preference";
 import type {Route} from "next";
 
@@ -37,6 +32,17 @@ export const replaceLanguagePrefix = (
     }
     return `/${segments.join("/")}` as Route;
 };
+
+export const buildLanguageSwitchPath = (
+    pathname: string,
+    next: SupportedLanguage,
+    search = "",
+    hash = "",
+): Route => {
+    const query = search ? (search.startsWith("?") ? search : `?${search}`) : "";
+    const fragment = hash ? (hash.startsWith("#") ? hash : `#${hash}`) : "";
+    return replaceLanguagePrefix(pathname, next) + query + fragment as Route;
+}
 
 /**
  * 语言优先级：URL 前缀 > 设备偏好 cookie > 浏览器检测 > 默认。

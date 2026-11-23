@@ -34,5 +34,5 @@ export function proxy(request: NextRequest) {
 
 export const config = {
     // 排除下一层静态资源与带扩展名的文件避免对静态资源进行多语言拦截
-    matcher: ["/((?!en(?:/|$)|es(?:/|$)|zh(?:/|$)|_next|.*\\..*).*)"],
+    matcher: ["/((?!api|_vercel|_next|.*\\..*).*)"],
 };

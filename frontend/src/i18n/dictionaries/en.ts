@@ -9,6 +9,9 @@ const en: Dictionary = {
             system: "Follow system",
             current: "Current theme: {theme} (click to switch)",
         },
+        language: {
+            switch: "Current language: {language}, switch language",
+        },
         errors: {
             network: "Can't connect. Check your connection and try again.",
             timeout: "The server took too long to respond. Try again.",

@@ -2,16 +2,18 @@
 
 import Link from "next/link";
 import {buildLocalizedPath, type Dictionary, stripLanguagePrefix, type SupportedLanguage} from "@/i18n";
-import {GraduationCap, School} from "lucide-react";
+import {School} from "lucide-react";
 import {
     NavigationMenu,
     NavigationMenuItem,
     NavigationMenuLink,
-    NavigationMenuList, navigationMenuTriggerStyle
+    NavigationMenuList,
+    navigationMenuTriggerStyle
 } from "@/components/ui/navigation-menu";
 import {usePathname} from "next/navigation";
 import {cn} from "cn";
 import ThemeSwitcher from "@/components/common/theme-switcher";
+import LanguageSwitcher from "@/components/common/language-switcher";
 
 type NavKey = keyof Dictionary["site"]["nav"];
 
@@ -29,7 +31,7 @@ export default function SiteHeader({lang, dictionary}: { lang: SupportedLanguage
 
     return (
         <header
-            className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur-md supports-backdrop-filter:bg-background/80">
+            className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur-sm supports-backdrop-filter:bg-background/80">
             <div
                 className="mx-auto flex h-14 w-full max-w-6xl items-center justify-between px-4 sm:px-6">
                 {/* Left logo and school name */}
@@ -62,6 +64,7 @@ export default function SiteHeader({lang, dictionary}: { lang: SupportedLanguage
                 {/* 操作区 */}
                 <div className="ml-auto flex items-center gap-1 lg:ml-0 lg:justify-end">
                     <ThemeSwitcher dictionary={dictionary}/>
+                    <LanguageSwitcher lang={lang} dictionary={dictionary}/>
                 </div>
             </div>
         </header>
