@@ -10,7 +10,7 @@ const en: Dictionary = {
             current: "Current theme: {theme} (click to switch)",
         },
         language: {
-            switch: "Current language: {language}, switch language",
+            switch: "Current language: {language} (click to switch)",
         },
         errors: {
             network: "Can't connect. Check your connection and try again.",

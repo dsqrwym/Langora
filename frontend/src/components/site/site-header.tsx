@@ -62,7 +62,7 @@ export default function SiteHeader({lang, dictionary}: { lang: SupportedLanguage
                 </NavigationMenu>
 
                 {/* 操作区 */}
-                <div className="ml-auto flex items-center gap-1 lg:ml-0 lg:justify-end">
+                <div className="flex items-center lg:justify-end">
                     <ThemeSwitcher dictionary={dictionary}/>
                     <LanguageSwitcher lang={lang} dictionary={dictionary}/>
                 </div>
