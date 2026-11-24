@@ -1,21 +1,23 @@
+"use client"
+
 import {DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger} from "@/components/ui/dropdown-menu";
 import {Button} from "@/components/ui/button";
 import {MoonIcon, SunIcon, SunMoonIcon} from "lucide-react";
 import {useThemeStore} from "@/lib/theme/theme-store";
 import {Tooltip, TooltipContent, TooltipTrigger} from "@/components/ui/tooltip";
 import {type ThemePreference, useThemePreference} from "@/lib/theme";
-import {type Dictionary, formatMessage} from "@/i18n";
+import {useTranslations} from "next-intl";
 
-export default function ThemeSwitcher({dictionary}: { dictionary: Dictionary }) {
-    const {theme} = dictionary.common;
+export default function ThemeSwitcher() {
+    const tTheme = useTranslations("common.theme");
     const themeLabels: Record<ThemePreference, string> = {
-        light: theme.light,
-        dark: theme.dark,
-        system: theme.system,
+        light: tTheme("light"),
+        dark: tTheme("dark"),
+        system: tTheme("system"),
     };
     const {setPreference} = useThemeStore.getState();
     const currentPreference = useThemePreference();
-    const tooltipContent = formatMessage(theme.current, {theme: themeLabels[currentPreference]});
+    const tooltipContent = tTheme("current", {theme: themeLabels[currentPreference]});
     return (
         <DropdownMenu>
             <Tooltip>

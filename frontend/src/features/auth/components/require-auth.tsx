@@ -2,30 +2,26 @@
 
 import React, {type PropsWithChildren, useEffect} from "react";
 import {useAuth} from "@/features/auth";
-import {useParams, useRouter} from "next/navigation";
 import {useSessionBootstrap} from "@/features/auth/session/auth-session";
-import {buildLocalizedPath, getLanguageOrDefault, isSupportedLanguage} from "@/i18n";
 import {FullScreenLoader} from "@/components/ui/full-screen-loader";
+import {usePathname, useRouter} from "@/i18n/navigation";
+import {useTranslations} from "next-intl";
 
-export function RequireAuth({children, loadingLabel}: PropsWithChildren<{ loadingLabel: string }>) {
+export function RequireAuth({children}: PropsWithChildren) {
     const {status} = useAuth();
     const router = useRouter();
-    const {lang} = useParams<{ lang: string }>();
+    const pathname = usePathname();
+    const t = useTranslations("common");
 
     useSessionBootstrap();
 
     useEffect(() => {
         if (status !== "anonymous") return;
 
-        const current = window.location.pathname + window.location.search;
-        const loginUrl = buildLocalizedPath(
-            isSupportedLanguage(lang) ? lang : getLanguageOrDefault(),
-            "/admin/login"
-        );
+        const current = pathname + window.location.search;
+        router.replace(`/admin/login?callbackUrl=${encodeURIComponent(current)}`);
+    }, [status, router, pathname]);
 
-        router.replace(`${loginUrl}?callbackUrl=${encodeURIComponent(current)}`)
-    }, [status, lang, router]);
-
-    if (status !== "authenticated") return <><FullScreenLoader label={loadingLabel}/> {children}</>;
+    if (status !== "authenticated") return <><FullScreenLoader label={t("loading")}/> {children}</>;
     return <>{children}</>;
 }

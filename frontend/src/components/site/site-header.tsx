@@ -1,21 +1,20 @@
-"use client"
+"use client";
 
-import Link from "next/link";
-import {buildLocalizedPath, type Dictionary, stripLanguagePrefix, type SupportedLanguage} from "@/i18n";
 import {School} from "lucide-react";
+import {cn} from "cn";
+import {useTranslations} from "next-intl";
 import {
     NavigationMenu,
     NavigationMenuItem,
     NavigationMenuLink,
     NavigationMenuList,
-    navigationMenuTriggerStyle
+    navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
-import {usePathname} from "next/navigation";
-import {cn} from "cn";
 import ThemeSwitcher from "@/components/common/theme-switcher";
 import LanguageSwitcher from "@/components/common/language-switcher";
+import {Link, usePathname} from "@/i18n/navigation";
 
-type NavKey = keyof Dictionary["site"]["nav"];
+type NavKey = "home" | "courses" | "news" | "about";
 
 const NAV_ITEMS: ReadonlyArray<{ key: NavKey; path: string }> = [
     {key: "home", path: "/"},
@@ -24,10 +23,11 @@ const NAV_ITEMS: ReadonlyArray<{ key: NavKey; path: string }> = [
     {key: "about", path: "/"},
 ];
 
-export default function SiteHeader({lang, dictionary}: { lang: SupportedLanguage; dictionary: Dictionary }) {
-    const schoolName = "学校名字"
-    const path = usePathname() ?? "/";
-    const currentPath = stripLanguagePrefix(path);
+export default function SiteHeader() {
+    const schoolName = "学校名字";
+    const t = useTranslations("site.nav");
+    // next-intl 的 usePathname() 已经自动剥离了 /{lang} 前缀
+    const currentPath = usePathname() || "/";
 
     return (
         <header
@@ -36,7 +36,7 @@ export default function SiteHeader({lang, dictionary}: { lang: SupportedLanguage
                 className="mx-auto flex h-14 w-full max-w-6xl items-center justify-between px-4 sm:px-6">
                 {/* Left logo and school name */}
                 <Link
-                    href={buildLocalizedPath(lang, NAV_ITEMS[0].path)}
+                    href={NAV_ITEMS[0].path}
                     className="font-bold text-lg flex items-center gap-2"
                 >
                     <School className="size-4" aria-hidden="true"/>
@@ -49,12 +49,12 @@ export default function SiteHeader({lang, dictionary}: { lang: SupportedLanguage
                         {NAV_ITEMS.map((item) => (
                             <NavigationMenuItem key={item.key}>
                                 <NavigationMenuLink
-                                    render={<Link href={buildLocalizedPath(lang, item.path)}/>}
+                                    render={<Link href={item.path}/>}
                                     active={currentPath === item.path}
                                     aria-current={currentPath === item.path ? "page" : undefined}
                                     className={cn(navigationMenuTriggerStyle(), "text-sm")}
                                 >
-                                    {dictionary.site.nav[item.key]}
+                                    {t(item.key)}
                                 </NavigationMenuLink>
                             </NavigationMenuItem>
                         ))}
@@ -63,10 +63,10 @@ export default function SiteHeader({lang, dictionary}: { lang: SupportedLanguage
 
                 {/* 操作区 */}
                 <div className="flex items-center lg:justify-end">
-                    <ThemeSwitcher dictionary={dictionary}/>
-                    <LanguageSwitcher lang={lang} dictionary={dictionary}/>
+                    <ThemeSwitcher/>
+                    <LanguageSwitcher/>
                 </div>
             </div>
         </header>
-    )
+    );
 }
