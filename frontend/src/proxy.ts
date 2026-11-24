@@ -1,38 +1,36 @@
+import createMiddleware from "next-intl/middleware";
+import {LANGUAGE_COOKIE_NAME, routing, SUPPORTED_LANGUAGES} from "@/i18n/routing";
+import {hasLocale} from "next-intl";
 import {type NextRequest, NextResponse} from "next/server";
-import {
-    DEFAULT_LANGUAGE,
-    isSupportedLanguage,
-    LANGUAGE_COOKIE_NAME,
-    pickLanguageFromAcceptLanguage,
-} from "@/i18n/languages";
+
+
+const handleI18nRouting = createMiddleware(routing);
 
 /**
  * Next 16 用 proxy 取代 middleware 约定。
  */
 export function proxy(request: NextRequest) {
+    // priority: url > cookie > accept-language > default
     const {pathname} = request.nextUrl;
     // domain.com/en/some/path => pathname => /en/some/path => split => ["", "en", "some", "path"]
     const segments = pathname.split("/");
-    const currentLang = segments[1] ?? "";
+    const currentLang = segments[1]?.toLocaleLowerCase() ?? "";
 
-    if (isSupportedLanguage(currentLang)) return NextResponse.next();
+    if (hasLocale(SUPPORTED_LANGUAGES, currentLang)) return handleI18nRouting(request);
 
-    // without language
-
-    // priority: cookie > accept-language > default
+    // without language in url
     const cookieLanguage = request.cookies.get(LANGUAGE_COOKIE_NAME)?.value;
-    const language = isSupportedLanguage(cookieLanguage)
-        ? cookieLanguage
-        : pickLanguageFromAcceptLanguage(request.headers.get("accept-language")) ?? DEFAULT_LANGUAGE;
-
-    const url = request.nextUrl.clone();
-    url.pathname = `/${language}${pathname === "/" ? "" : pathname}`;
-
-    // 用 301 会被浏览器永久缓存，用户之后切换语言再也回不来。
-    return NextResponse.redirect(url, 307);
+    if (hasLocale(SUPPORTED_LANGUAGES, cookieLanguage)) {
+        const url = request.nextUrl.clone();
+        url.pathname = `/${cookieLanguage}${pathname === "/" ? "" : pathname}`;
+        // 用 301 会被浏览器永久缓存，用户之后切换语言再也回不来。
+        return NextResponse.redirect(url, 307);
+    }
+    // next-intl will handle the Accept-Language > default language 307
+    return handleI18nRouting(request);
 }
 
 export const config = {
-    // 排除下一层静态资源与带扩展名的文件避免对静态资源进行多语言拦截
-    matcher: ["/((?!api|_vercel|_next|.*\\..*).*)"],
+    // 必须使用纯静态字符串字面量，不能引用变量或模板插值；新增语言时需同步更新此处
+    matcher: ["/((?!api|_vercel|_next|en(?:/|$)|es(?:/|$)|zh(?:/|$)|.*\\..*).*)"],
 };

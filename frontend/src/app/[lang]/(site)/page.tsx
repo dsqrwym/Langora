@@ -1,14 +1,9 @@
-import Link from "next/link";
-import {notFound} from "next/navigation";
-import {LANGUAGE_LABELS, SUPPORTED_LANGUAGES, isSupportedLanguage} from "@/i18n/languages";
-import {buildLocalizedPath} from "@/i18n/paths";
+import {LANGUAGE_LABELS, SUPPORTED_LANGUAGES} from "@/i18n/routing";
+import {Link} from "@/i18n/navigation";
+
 
 export default async function HomePage({params}: PageProps<'/[lang]'>) {
     const {lang} = await params;
-
-    if (!isSupportedLanguage(lang)) {
-        notFound();
-    }
 
     return (
         <main className="mx-auto flex min-h-svh w-full max-w-3xl flex-col justify-center gap-10 px-6 py-16">
@@ -33,7 +28,8 @@ export default async function HomePage({params}: PageProps<'/[lang]'>) {
                     {SUPPORTED_LANGUAGES.map((language) => (
                         <Link
                             key={language}
-                            href={buildLocalizedPath(language, "/")}
+                            href="/"
+                            locale={language}
                             aria-current={language === lang ? "page" : undefined}
                             className="rounded-full border border-border px-3.5 py-1.5 text-xs font-medium transition-colors hover:bg-muted aria-[current=page]:bg-primary aria-[current=page]:text-primary-foreground"
                         >
@@ -45,13 +41,13 @@ export default async function HomePage({params}: PageProps<'/[lang]'>) {
 
             <nav className="flex flex-wrap items-center gap-3 text-xs">
                 <Link
-                    href={buildLocalizedPath(lang, "/admin")}
+                    href="/admin"
                     className="rounded-md border border-border px-3 py-1.5 font-medium transition-colors hover:bg-muted"
                 >
                     Admin
                 </Link>
                 <Link
-                    href={buildLocalizedPath(lang, "/missing-page")}
+                    href="/missing-page"
                     className="rounded-md border border-border px-3 py-1.5 font-medium transition-colors hover:bg-muted"
                 >
                     404 demo

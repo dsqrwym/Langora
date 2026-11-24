@@ -1,6 +1,5 @@
 import {LoginForm} from "@/features/auth/components/login-form"
 import {UserRoundShield} from "lucide-react"
-import {getDictionary, type SupportedLanguage} from "@/i18n";
 import {RedirectIfAuthed} from "@/features/auth/components/redirect-if-authed";
 import {
     buildLoginPhotos,
@@ -10,18 +9,18 @@ import {
 } from "@/features/auth/login-photo-script";
 import {InlineScript} from "@/components/common/inline-script";
 import {type Metadata} from "next";
+import {getMessages, getTranslations} from "next-intl/server";
+import {Link} from "@/i18n/navigation";
 
-export async function generateMetadata({params}: PageProps<'/[lang]/admin/login'>): Promise<Metadata> {
-    const {lang} = await params;
-    const dictionary = await getDictionary(lang as SupportedLanguage);
+export async function generateMetadata(): Promise<Metadata> {
+    const t = await getTranslations("auth");
 
-    return {title: dictionary.auth.login};
+    return {title: t("login")};
 }
 
-export default async function AdminLoginPage({params}: PageProps<'/[lang]/admin/login'>) {
-    const {lang} = await params;
-    const dictionary = await getDictionary(lang as SupportedLanguage);
-    const photos = buildLoginPhotos(dictionary);
+export default async function AdminLoginPage() {
+    const messages = await getMessages();
+    const photos = buildLoginPhotos(messages.auth.loginQuotes);
     // Only quoted photos get a card; the first is the SSR baseline. The inline script swaps visibility to the randomly picked photo before first paint.
     /* 有文案的照片才渲染引文卡片；首帧基准取第一张，脚本执行后切换到随机选中的那张 */
     const quoted = photos.filter((photo) => photo.quote);
@@ -74,18 +73,18 @@ export default async function AdminLoginPage({params}: PageProps<'/[lang]/admin/
             />
             <div className="flex flex-col gap-4 p-6 md:p-10">
                 <div className="flex justify-center gap-2 md:justify-start">
-                    <a href="../admin" className="flex items-center gap-2 font-medium">
+                    <Link href="/admin" className="flex items-center gap-2 font-medium">
                         <div
                             className="flex size-6 items-center justify-center rounded-md bg-primary text-primary-foreground">
                             <UserRoundShield className="size-4"/>
                         </div>
                         Langora Admin
-                    </a>
+                    </Link>
                 </div>
                 <div className="flex flex-1 items-center justify-center">
                     <div className="w-full max-w-xs">
                         <RedirectIfAuthed>
-                            <LoginForm dictionary={dictionary}/>
+                            <LoginForm/>
                         </RedirectIfAuthed>
                     </div>
                 </div>

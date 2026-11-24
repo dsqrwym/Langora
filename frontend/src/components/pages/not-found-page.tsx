@@ -1,14 +1,11 @@
 "use client"
 
 import {useEffect, useRef} from "react";
-import Link from "next/link";
-import {usePathname, useRouter} from "next/navigation";
+import {usePathname, useRouter, Link} from "@/i18n/navigation";
 import {ArrowLeft, Home} from "lucide-react";
 import {cn} from "cn";
 import {Button, buttonVariants} from "@/components/ui/button";
-import {stripLanguagePrefix} from "@/i18n/paths";
-import {type NotFoundMessages} from "@/i18n/not-found-messages";
-import type {Route} from "next";
+import {useTranslations} from "next-intl";
 
 type FieldNode = {
     x: number;
@@ -435,9 +432,7 @@ const NodeField = ({className}: NodeFieldProps) => {
 
 type NotFoundPageProps = {
     /** 返回首页按钮（以及快捷键 H、无历史时的兜底）的目标地址 */
-    homePath: Route;
-    /** 404 文案：三语小字典同步加载，保证错误页首帧即正确语言 */
-    messages: NotFoundMessages;
+    homePath: string;
 };
 
 /**
@@ -445,13 +440,13 @@ type NotFoundPageProps = {
  * 全屏节点场跟随鼠标聚拢、旋涡、互斥，点击空白释放冲击波；
  * 中间是玻璃质感的 404 文案与返回首页操作。
  */
-export const NotFoundPage = ({homePath, messages}: NotFoundPageProps) => {
+export const NotFoundPage = ({homePath}: NotFoundPageProps) => {
+    const t = useTranslations("notFound");
     // not-found 阶段 usePathname 可能返回 null
-    const currentPathname = usePathname() ?? "/";
+    const pathname = usePathname() ?? "/";
     const router = useRouter();
 
     // 地址里去掉语言前缀，展示 "GET /xxx" 这种终端风格的信息
-    const pathname = stripLanguagePrefix(currentPathname) || "/";
     const displayPath = pathname.length > 42 ? `${pathname.slice(0, 42)}…` : pathname;
 
     // 彩蛋：按 H 回首页
@@ -500,7 +495,7 @@ export const NotFoundPage = ({homePath, messages}: NotFoundPageProps) => {
                             className="absolute inline-flex size-full animate-ping rounded-full bg-foreground opacity-75"/>
                         <span className="relative inline-flex size-1.5 rounded-full bg-foreground"/>
                     </span>
-                    {messages.badge}
+                    {t("badge")}
                 </div>
 
                 <div className="relative mt-4 flex items-center justify-center">
@@ -518,12 +513,12 @@ export const NotFoundPage = ({homePath, messages}: NotFoundPageProps) => {
                 </div>
 
                 <h2 className="nf-rise mt-4 text-2xl font-semibold tracking-tight text-balance sm:text-3xl [animation-delay:100ms]">
-                    {messages.title}
+                    {t("title")}
                 </h2>
                 <p className="nf-rise mt-2 max-w-md text-sm leading-relaxed text-balance text-muted-foreground [animation-delay:160ms]">
-                    {messages.description}
+                    {t("description")}
                     <br className="hidden sm:block"/>
-                    <span className="text-muted-foreground/70">{messages.reassurance}</span>
+                    <span className="text-muted-foreground/70">{t("reassurance")}</span>
                 </p>
 
                 <div className="nf-rise mt-4 w-full max-w-md [animation-delay:220ms]">
@@ -549,7 +544,7 @@ export const NotFoundPage = ({homePath, messages}: NotFoundPageProps) => {
                         )}
                     >
                         <Home className="size-4"/>
-                        {messages.home}
+                        {t("home")}
                     </Link>
                     <Button
                         variant="secondary"
@@ -558,13 +553,13 @@ export const NotFoundPage = ({homePath, messages}: NotFoundPageProps) => {
                         className="h-11 gap-2 rounded-full px-5 text-sm"
                     >
                         <ArrowLeft className="size-4"/>
-                        {messages.back}
+                        {t("back")}
                     </Button>
                 </div>
 
                 <p className="nf-rise mt-6 flex items-center gap-2 rounded-full bg-background px-3 py-1 font-mono text-[10px] tracking-[0.18em] text-muted-foreground/70 uppercase [animation-delay:380ms]">
                     <span className="size-1 animate-pulse rounded-full bg-foreground"/>
-                    {messages.interactionHint}
+                    {t("interactionHint")}
                 </p>
             </div>
 

@@ -1,10 +1,9 @@
 import {showErrorToast, TOAST_DURATION} from "@/lib/toast-manager";
-import {type Dictionary, formatMessage} from "@/i18n";
 import {ApiError, type AppError} from "@/lib/api/api-types";
-import {getCommonErrorString} from "@/lib/api/api-error-i18n";
+import {type CommonErrorTranslator, getCommonErrorString} from "@/lib/api/api-error-i18n";
 
-export const reportError = (error: AppError, dictionary: Dictionary): void => {
-    const title = getCommonErrorString(error, dictionary);
+export const reportError = (error: AppError, t: CommonErrorTranslator): void => {
+    const title = getCommonErrorString(error, t);
 
     console.error("[api-error]", title, error);
 
@@ -12,7 +11,7 @@ export const reportError = (error: AppError, dictionary: Dictionary): void => {
 
     showErrorToast({
         title,
-        description: formatMessage(dictionary.common.errors.errorCode, {code}),
+        description: t("errorCode", {code}),
         duration: TOAST_DURATION.long,
     });
 };

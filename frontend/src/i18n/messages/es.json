@@ -1,0 +1,119 @@
+{
+    "common": {
+        "loading": "Cargando",
+        "theme": {
+            "light": "Claro",
+            "dark": "Oscuro",
+            "system": "Seguir el sistema",
+            "current": "Tema actual: {theme} (haz clic para cambiar)"
+        },
+        "language": {
+            "switch": "Idioma actual: {language} (haz clic para cambiar)"
+        },
+        "errors": {
+            "network": "No se puede conectar. Comprueba tu conexión e inténtalo de nuevo.",
+            "timeout": "El servidor ha tardado demasiado en responder. Inténtalo de nuevo.",
+            "rateLimited": "Demasiados intentos. Inténtalo de nuevo en un momento.",
+            "accessDenied": "No tienes acceso a esta acción.",
+            "sessionExpired": "Tu sesión ha caducado. Inicia sesión de nuevo.",
+            "accountDisabled": "Esta cuenta está desactivada. Contacta con tu administrador.",
+            "server": "El servicio no está disponible temporalmente. Inténtalo de nuevo en breve.",
+            "requestFailed": "La operación no se ha completado. Inténtalo de nuevo.",
+            "invalidResponse": "El servidor ha devuelto datos que no podemos leer. Contacta con tu desarrollador.",
+            "validationFailed": "La solicitud ha sido rechazada. Contacta con tu desarrollador.",
+            "unexpected": "Algo ha salido mal. Inténtalo de nuevo.",
+            "errorCode": "Código de error: {code}"
+        }
+    },
+    "admin": {
+        "title": "Administración"
+    },
+    "site": {
+        "nav": {
+            "home": "Inicio",
+            "courses": "Cursos",
+            "news": "Noticias",
+            "about": "Sobre nosotros"
+        }
+    },
+    "auth": {
+        "login": "Iniciar sesión",
+        "title": "Inicia sesión en tu cuenta",
+        "subtitle": "Introduce tu correo o usuario para continuar",
+        "identifierLabel": "Correo electrónico o usuario",
+        "identifierPlaceholder": "Introduce tu correo o usuario",
+        "passwordLabel": "Contraseña",
+        "passwordPlaceholder": "Introduce tu contraseña",
+        "forgotPassword": "¿Has olvidado la contraseña?",
+        "submitting": "Iniciando sesión…",
+        "captchaRequired": "Completa la verificación de abajo",
+        "captchaFailed": "La verificación ha fallado. Inténtalo de nuevo.",
+        "captchaUnavailable": "La verificación no está disponible temporalmente. Inténtalo de nuevo en breve.",
+        "errors": {
+            "invalidUsernameCredentials": "Usuario o contraseña incorrectos",
+            "invalidEmailCredentials": "Correo o contraseña incorrectos",
+            "identifierRequired": "Introduce tu correo o usuario",
+            "invalidEmail": "Introduce un correo electrónico válido",
+            "usernameMinLength": "El usuario debe tener al menos {min} caracteres",
+            "usernameInvalidCharacters": "El usuario solo puede contener letras, números, puntos, guiones bajos o guiones",
+            "passwordRequired": "Introduce una contraseña válida",
+            "passwordTooLong": "La contraseña es demasiado larga (máx. {max} bytes)"
+        },
+        "loginQuotes": {
+            "default": {
+                "original": "母语是回家的路。",
+                "translation": "Cada carácter, un camino a casa.",
+                "source": "Langora"
+            },
+            "ink-and-paper": {
+                "original": "读书破万卷，下笔如有神。",
+                "translation": "Tras leer diez mil libros, la pluma escribe como si tuviera alma.",
+                "source": "Du Fu"
+            },
+            "jade-artisan": {
+                "original": "玉不琢，不成器；人不学，不知道。",
+                "translation": "La piedra sin pulir no se vuelve jade; sin aprender, nadie encuentra el camino.",
+                "source": "Libro de los Ritos"
+            },
+            "long-road": {
+                "original": "千里之行，始于足下。",
+                "translation": "Un viaje de mil li comienza bajo los pies.",
+                "source": "Laozi, Tao Te Ching"
+            },
+            "tea-ceremony": {
+                "original": "三人行，必有我师焉。",
+                "translation": "Entre tres personas, siempre hay una de quien aprender.",
+                "source": "Confucio, Analectas"
+            },
+            "bonsai-pruning": {
+                "original": "教也者，长善而救其失者也。",
+                "translation": "Enseñar es cultivar lo bueno y corregir lo que falta.",
+                "source": "Libro de los Ritos"
+            },
+            "go-board": {
+                "original": "不积跬步，无以至千里。",
+                "translation": "Sin pequeños pasos no se llega a mil li.",
+                "source": "Xunzi, Sobre el estudio"
+            },
+            "thread-bound-book": {
+                "original": "温故而知新，可以为师矣。",
+                "translation": "Repasar lo antiguo y comprender lo nuevo: así se llega a ser maestro.",
+                "source": "Confucio, Analectas"
+            },
+            "first-brushstroke": {
+                "original": "幼而学者，如日出之光。",
+                "translation": "Aprender en la infancia es como la luz del amanecer.",
+                "source": "Yan Zhitui, Admoniciones de la familia Yan"
+            }
+        }
+    },
+    "notFound": {
+        "badge": "404 · perdido en la red",
+        "title": "Esta página no está aquí",
+        "description": "La dirección no existe, se ha movido o nunca existió.",
+        "reassurance": "No te preocupes: sigue la luz de vuelta.",
+        "home": "Volver al inicio",
+        "back": "Volver atrás",
+        "interactionHint": "Mueve el cursor para atraer los nodos · Haz clic en el vacío para liberar una onda"
+    }
+}

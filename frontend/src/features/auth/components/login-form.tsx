@@ -8,7 +8,6 @@ import {Input} from "@/components/ui/input"
 import * as React from "react";
 import {useEffect, useRef, useState} from "react";
 import {Spinner} from "@/components/ui/spinner";
-import {type Dictionary} from "@/i18n/dictionaries/zh";
 import {createLoginSchema, type LoginFormValues} from "@/features/auth/auth-schemas";
 import {useForm, useWatch} from "react-hook-form";
 import {zodResolver} from "@hookform/resolvers/zod";
@@ -21,20 +20,19 @@ import {ErrorCode} from "@/lib/api/api-error-codes";
 import {ADMIN_USERNAME_MAX_LENGTH, EMAIL_MAX_LENGTH} from "@/lib/validation/field-limits";
 import {withFormat} from "@/lib/form/with-format";
 import {reportError} from "@/lib/reportError";
+import {useTranslations} from "next-intl";
 
-type LoginFormProps = {
-    dictionary: Dictionary
-}
 
 export function LoginForm(
     {
         className,
-        dictionary,
         ...props
-    }: React.ComponentProps<"form"> & LoginFormProps
+    }: React.ComponentProps<"form">
 ) {
-    const {auth} = dictionary;
-    const schema = createLoginSchema(dictionary);
+    const tAuth = useTranslations("auth");
+    const tAuthErrors = useTranslations("auth.errors");
+    const tCommonErrors = useTranslations("common.errors");
+    const schema = createLoginSchema(tAuthErrors);
 
     const {
         control, register, handleSubmit, setError, setFocus,
@@ -77,13 +75,13 @@ export function LoginForm(
 
             if (!config.success) {
                 console.error("[login] captcha config failed", config.error);
-                showErrorToast({title: dictionary.common.errors.unexpected});
+                showErrorToast({title: tCommonErrors("unexpected")});
                 return;
             }
 
             if (!config.data.siteKey || !captchaSlot.current) {
                 console.error("[login] captcha config missing data or not enabled", config.data);
-                showErrorToast({title: dictionary.common.errors.unexpected});
+                showErrorToast({title: tCommonErrors("unexpected")});
                 return;
             }
 
@@ -96,7 +94,7 @@ export function LoginForm(
         return () => {
             cancelled = true;
         };
-    }, [captchaRequired, dictionary]);
+    }, [captchaRequired, tCommonErrors]);
 
 
     // eslint-disable-next-line react-hooks/refs
@@ -123,15 +121,17 @@ export function LoginForm(
                             removeTurnstile(captchaWidget.current);
                             captchaWidget.current = null;
                         }
-                        showErrorToast({title: auth.captchaRequired});
+                        showErrorToast({title: tAuth("captchaRequired")});
                         return;
                     case ErrorCode.AUTH_CAPTCHA_INVALID:
                         // token 已被后端消费：重置 widget 让用户重新验证
                         if (captchaWidget.current) resetTurnstile(captchaWidget.current);
-                        showErrorToast({title: auth.captchaFailed});
+                        showErrorToast({title: tAuth("captchaFailed")});
                         return;
                     case ErrorCode.AUTH_INVALID_CREDENTIALS:
-                        const error = isEmail ? auth.errors.invalidEmailCredentials : auth.errors.invalidUsernameCredentials;
+                        const error = isEmail
+                            ? tAuthErrors("invalidEmailCredentials")
+                            : tAuthErrors("invalidUsernameCredentials");
                         showErrorToast({title: error});
                         setError("password", {message: error});
                         setFocus("password", {shouldSelect: true});
@@ -143,7 +143,7 @@ export function LoginForm(
                 return;
             }
 
-            reportError(error, dictionary);
+            reportError(error, tCommonErrors);
         } finally {
             submittingRef.current = false;
         }
@@ -154,13 +154,13 @@ export function LoginForm(
         <form onSubmit={onSubmit} noValidate={true} className={cn("flex flex-col gap-6", className)} {...props}>
             <FieldGroup>
                 <div className="flex flex-col items-center gap-1 text-center">
-                    <h1 className="text-2xl font-bold">{auth.title}</h1>
+                    <h1 className="text-2xl font-bold">{tAuth("title")}</h1>
                     <p className="text-sm text-balance text-muted-foreground">
-                        {auth.subtitle}
+                        {tAuth("subtitle")}
                     </p>
                 </div>
                 <Field>
-                    <FieldLabel htmlFor={identifier.name}>{auth.identifierLabel}</FieldLabel>
+                    <FieldLabel htmlFor={identifier.name}>{tAuth("identifierLabel")}</FieldLabel>
                     <Input
                         id={identifier.name}
                         aria-invalid={errors.identifier ? true : undefined}
@@ -168,7 +168,7 @@ export function LoginForm(
                         autoCapitalize="none"
                         autoCorrect="off"
                         type="text"
-                        placeholder={auth.identifierPlaceholder}
+                        placeholder={tAuth("identifierPlaceholder")}
                         autoComplete={isEmail ? "email" : "username"}
                         disabled={isSubmitting}
                         {...identifier}
@@ -178,7 +178,7 @@ export function LoginForm(
                 </Field>
                 <Field>
                     <div className="flex items-center">
-                        <FieldLabel htmlFor={password.name}>{auth.passwordLabel}</FieldLabel>
+                        <FieldLabel htmlFor={password.name}>{tAuth("passwordLabel")}</FieldLabel>
                     </div>
                     <Input
                         id={password.name}
@@ -186,7 +186,7 @@ export function LoginForm(
                         aria-describedby={errors.password ? passwordError : undefined}
                         type="password"
                         autoComplete="current-password"
-                        placeholder={auth.passwordPlaceholder}
+                        placeholder={tAuth("passwordPlaceholder")}
                         disabled={isSubmitting}
                         {...password}
                         required
@@ -201,8 +201,8 @@ export function LoginForm(
                                     aria-hidden="true"
                                     data-icon="inline-start"
                                 />
-                                {auth.submitting}
-                            </> : auth.login}
+                                {tAuth("submitting")}
+                            </> : tAuth("login")}
                     </Button>
                 </Field>
 

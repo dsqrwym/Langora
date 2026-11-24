@@ -1,14 +1,13 @@
 import type {Metadata} from "next";
-import {getDictionary, type SupportedLanguage} from "@/i18n";
 import {type PropsWithChildren} from "react";
+import {getTranslations} from "next-intl/server";
 
 /**
  * Admin pages must stay out of search results, and the title template keeps tabs readable ("Articles · Admin").
  */
-export async function generateMetadata({params}:LayoutProps<'/[lang]/admin'>): Promise<Metadata> {
-    const {lang} = await params;
-    const dictionary = await getDictionary(lang as SupportedLanguage);
-    const sectionTitle = dictionary.admin.title;
+export async function generateMetadata(): Promise<Metadata> {
+    const t = await getTranslations("admin");
+    const sectionTitle = t("title");
 
     return {
         title: {

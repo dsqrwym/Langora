@@ -1,12 +1,13 @@
 import type {Metadata, Viewport} from "next";
-import {notFound} from "next/navigation";
 import {ThemeInit} from "@/components/theme/theme-init";
 import {ToasterHost} from "@/components/ui/toaster-host";
-import {isSupportedLanguage, SUPPORTED_LANGUAGES} from "@/i18n/languages";
 import {InlineScript} from "@/components/common/inline-script";
 import {THEME_INIT_SCRIPT} from "@/lib/theme/theme-script";
 import "../globals.css";
 import {TooltipProvider} from "@/components/ui/tooltip";
+import {LOCALE_META, SUPPORTED_LANGUAGES} from "@/i18n/routing";
+import {hasLocale, NextIntlClientProvider} from "next-intl";
+import {notFound} from "next/navigation";
 
 export function generateStaticParams() {
     return SUPPORTED_LANGUAGES.map((language) => ({lang: language}));
@@ -29,22 +30,25 @@ export const viewport: Viewport = {
 export default async function RootLayout({children, params}: LayoutProps<'/[lang]'>) {
     const {lang} = await params;
 
-    if (!isSupportedLanguage(lang)) {
-        //  抛出 nextjs 404 然后会自动使用[...notFound]下的页面
+    // prevent invalid lang lead LOCALE_META[lang] error
+    if (!hasLocale(SUPPORTED_LANGUAGES, lang)) {
         notFound();
     }
 
     return (
-        <html lang={lang} suppressHydrationWarning>
+        <html lang={lang} suppressHydrationWarning dir={LOCALE_META[lang].dir}>
         <head>
             <InlineScript id="theme-script" html={THEME_INIT_SCRIPT}/>
         </head>
         <body className="min-h-svh antialiased">
         <ThemeInit/>
-        <TooltipProvider>
-            {children}
-            <ToasterHost/>
-        </TooltipProvider>
+        {/** Provider request.ts locale and i18n */}
+        <NextIntlClientProvider>
+            <TooltipProvider>
+                {children}
+                <ToasterHost/>
+            </TooltipProvider>
+        </NextIntlClientProvider>
         </body>
         </html>
     );

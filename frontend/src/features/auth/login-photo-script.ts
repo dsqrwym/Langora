@@ -1,4 +1,3 @@
-import type {Dictionary} from "@/i18n";
 import {LOGIN_PHOTOS} from "@/features/auth/login-photos-generated";
 import {toInlineScriptWithArgs} from "@/lib/inline-script";
 
@@ -23,8 +22,7 @@ export type LoginPhotoRender = {
     quoteIndex: number;
 };
 
-export function buildLoginPhotos(dictionary: Dictionary): LoginPhotoRender[] {
-    const quotes = dictionary.auth.loginQuotes as Record<string, LoginPhotoQuote>;
+export function buildLoginPhotos(quotes: Record<string, LoginPhotoQuote>): LoginPhotoRender[] {
     let quoteIndex = 0;
 
     return LOGIN_PHOTOS.map((photo) => {
