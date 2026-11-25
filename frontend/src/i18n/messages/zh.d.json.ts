@@ -37,6 +37,12 @@ declare const messages: {
       "courses": "课程",
       "news": "新闻",
       "about": "关于"
+    },
+    "menu": {
+      "open": "打开导航菜单",
+      "close": "关闭导航菜单",
+      "main": "主导航",
+      "mobile": "移动端导航"
     }
   },
   "auth": {

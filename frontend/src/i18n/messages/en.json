@@ -34,6 +34,12 @@
             "courses": "Courses",
             "news": "News",
             "about": "About"
+        },
+        "menu": {
+            "open": "Open navigation menu",
+            "close": "Close navigation menu",
+            "main": "Main navigation",
+            "mobile": "Mobile navigation"
         }
     },
     "auth": {

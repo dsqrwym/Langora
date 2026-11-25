@@ -22,6 +22,6 @@ export function RequireAuth({children}: PropsWithChildren) {
         router.replace(`/admin/login?callbackUrl=${encodeURIComponent(current)}`);
     }, [status, router, pathname]);
 
-    if (status !== "authenticated") return <><FullScreenLoader label={t("loading")}/> {children}</>;
+    if (status !== "authenticated") return <FullScreenLoader label={t("loading")}/>;
     return <>{children}</>;
 }

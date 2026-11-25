@@ -4,22 +4,14 @@ import React, {type PropsWithChildren, useEffect} from "react";
 import {useAuth} from "@/features/auth";
 import {useSessionBootstrap} from "@/features/auth/session/auth-session";
 import {useRouter} from "@/i18n/navigation";
-import {hasLocale} from "next-intl";
-import {routing} from "@/i18n/routing";
-
-const stripLeadingLocale = (path: string): string => {
-    const match = /^\/([^/?#]+)(.*)$/.exec(path);
-    if (!match) return path;
-
-    const [, firstSegment, rest] = match;
-    if (!hasLocale(routing.locales, firstSegment)) return path;
-
-    return rest.startsWith("/") ? rest : `/${rest}`;
-};
+import {FullScreenLoader} from "@/components/ui/full-screen-loader";
+import {useTranslations} from "next-intl";
+import {stripLeadingLocale} from "@/i18n/routing";
 
 export function RedirectIfAuthed({children}: PropsWithChildren) {
     const {status} = useAuth();
     const router = useRouter();
+    const t = useTranslations("common");
 
     useSessionBootstrap();
 
@@ -35,5 +27,6 @@ export function RedirectIfAuthed({children}: PropsWithChildren) {
         router.replace(target);
 
     }, [status, router]);
+    if (status !== "authenticated") return <><FullScreenLoader label={t("loading")}/> {children}</>;
     return <>{children}</>;
 }

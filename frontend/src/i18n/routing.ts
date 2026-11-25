@@ -1,4 +1,5 @@
 import {defineRouting} from "next-intl/routing";
+import {hasLocale} from "next-intl";
 
 export type LocaleMeta = {
     label: string;
@@ -35,3 +36,9 @@ export const LANGUAGE_LABELS: Record<SupportedLanguage, string> = Object.fromEnt
     SUPPORTED_LANGUAGES.map((locale) => [locale, LOCALE_META[locale].label]),
 ) as Record<SupportedLanguage, string>;
 
+export const stripLeadingLocale = (path: string) => {
+    const [first, ...rest] = path.split("/").filter(Boolean);
+    if (!hasLocale(SUPPORTED_LANGUAGES, first)) return path;
+
+    return `/${rest.join("/")}`;
+}
