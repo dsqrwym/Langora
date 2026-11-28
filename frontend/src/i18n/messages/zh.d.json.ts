@@ -32,6 +32,7 @@ declare const messages: {
     "title": "后台"
   },
   "site": {
+    "skipToContent": "跳到主要内容",
     "nav": {
       "home": "首页",
       "courses": "课程",

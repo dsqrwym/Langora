@@ -6,7 +6,7 @@ export default async function HomePage({params}: PageProps<'/[lang]'>) {
     const {lang} = await params;
 
     return (
-        <main className="mx-auto flex min-h-svh w-full max-w-3xl flex-col justify-center gap-10 px-6 py-16">
+        <div className="mx-auto flex w-full max-w-3xl flex-col justify-center gap-10 px-6 py-16">
             <header className="space-y-3">
                 <p className="font-mono text-[10px] tracking-[0.3em] text-muted-foreground uppercase">
                     Langora
@@ -53,6 +53,6 @@ export default async function HomePage({params}: PageProps<'/[lang]'>) {
                     404 demo
                 </Link>
             </nav>
-        </main>
+        </div>
     );
 }

@@ -24,7 +24,7 @@ export type SiteShellData = {
     schoolName: string;
     showHeaderSchoolName: boolean;
     logo: SiteMediaImage | null;
-    tagLine: string | null;
+    tagline: string | null;
     footerText: string | null;
     contact: SiteContactInfo;
 }

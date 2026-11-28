@@ -1,4 +1,3 @@
-
 import {ApiError, type ApiResponse, InvalidResponseError} from "@/lib/api/api-types";
 import {ErrorCode} from "@/lib/api/api-error-codes";
 import {DEFAULT_TIMEOUT_MS, SUCCESS_CODES} from "@/lib/api/api-config";
@@ -50,6 +49,27 @@ const buildCacheOptions = (cache: FetchCache): RequestInit => {
 
     return {cache: "force-cache", next: {revalidate: cache.revalidateSeconds}};
 };
+
+const mergeCacheOptions = (base: RequestInit, override: RequestInit): RequestInit => {
+    const baseNext = base.next;
+    const overrideNext = override.next;
+
+    if (!baseNext && !overrideNext) {
+        return {...base, ...override};
+    }
+
+    const mergedTags = Array.from(new Set([...(baseNext?.tags ?? []), ...(overrideNext?.tags ?? [])]));
+
+    return {
+        ...base,
+        ...override,
+        next: {
+            ...baseNext,
+            ...overrideNext,
+            ...(mergedTags.length > 0 ? {tags: mergedTags} : {}),
+        }
+    }
+}
 
 /** 把 调用方取消信号 和 超时信号 合成一个：谁先触发谁生效 */
 const buildSignal = (init: RequestInit, timeoutMs: number): AbortSignal => {
@@ -125,8 +145,7 @@ export function createApiFetch(
                 headers.set("Accept", "application/json");
             }
             return parseResponse<T>(await fetch(url, {
-                ...buildCacheOptions(cache),
-                ...current,          // current 在后：endpoint 可整体覆盖 transport 缓存策略
+                ...mergeCacheOptions(buildCacheOptions(cache), current),
                 signal: buildSignal(current, timeoutMs),
                 credentials,
                 headers,

@@ -27,6 +27,6 @@ export function RedirectIfAuthed({children}: PropsWithChildren) {
         router.replace(target);
 
     }, [status, router]);
-    if (status !== "authenticated") return <><FullScreenLoader label={t("loading")}/> {children}</>;
+    if (status !== "anonymous") return <><FullScreenLoader label={t("loading")}/> {children}</>;
     return <>{children}</>;
 }

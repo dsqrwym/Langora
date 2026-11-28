@@ -40,7 +40,7 @@ export default async function RootLayout({children, params}: LayoutProps<'/[lang
         <head>
             <InlineScript id="theme-script" html={THEME_INIT_SCRIPT}/>
         </head>
-        <body className="min-h-svh antialiased">
+        <body id="top" className="flex min-h-svh flex-col antialiased">
         <ThemeInit/>
         {/** Provider request.ts locale and i18n */}
         <NextIntlClientProvider>

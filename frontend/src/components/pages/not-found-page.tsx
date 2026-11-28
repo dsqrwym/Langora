@@ -1,7 +1,7 @@
 "use client"
 
 import {useEffect, useRef} from "react";
-import {usePathname, useRouter, Link} from "@/i18n/navigation";
+import {Link, usePathname, useRouter} from "@/i18n/navigation";
 import {ArrowLeft, Home} from "lucide-react";
 import {cn} from "cn";
 import {Button, buttonVariants} from "@/components/ui/button";
@@ -479,63 +479,77 @@ export const NotFoundPage = ({homePath}: NotFoundPageProps) => {
     };
 
     return (
-        <main className="nf-scene relative isolate flex min-h-svh flex-col overflow-hidden bg-background">
+        <main className="nf-scene relative isolate flex min-h-svh flex-1 flex-col overflow-hidden bg-background">
             {/* 全屏节点场 */}
             <NodeField className="pointer-events-none absolute inset-0 z-0 size-full"/>
 
-            {/* 边缘淡出，让中心更聚焦 */}
-            <div aria-hidden="true" className="nf-vignette pointer-events-none absolute inset-0 z-1"/>
+            {/* 边缘淡出装饰层：纯装饰用 span/div + aria-hidden */}
+            <span aria-hidden="true" className="nf-vignette pointer-events-none absolute inset-0 z-1"/>
 
-            <div
-                className="relative z-10 flex flex-1 flex-col items-center justify-center px-6 py-8 text-center sm:py-10">
-                <div
-                    className="nf-rise inline-flex items-center gap-2.5 rounded-full border border-border/70 bg-background px-3.5 py-1.5 font-mono text-[10px] tracking-[0.3em] text-muted-foreground uppercase">
-                    <span className="relative flex size-1.5">
+            <section
+                aria-labelledby="not-found-title"
+                className="relative z-10 flex flex-1 flex-col items-center justify-center px-6 py-8 text-center sm:py-10"
+            >
+                <p className="nf-rise inline-flex items-center gap-2.5 rounded-full border border-border/70 bg-background px-3.5 py-1.5 font-mono text-[10px] tracking-[0.3em] text-muted-foreground uppercase">
+                    <span aria-hidden="true" className="relative flex size-1.5">
                         <span
                             className="absolute inline-flex size-full animate-ping rounded-full bg-foreground opacity-75"/>
                         <span className="relative inline-flex size-1.5 rounded-full bg-foreground"/>
                     </span>
                     {t("badge")}
-                </div>
+                </p>
 
-                <div className="relative mt-4 flex items-center justify-center">
-                    {/* Apple 风玻璃板：真实模糊背后的节点场 */}
-                    <div aria-hidden="true"
-                         className="nf-glass pointer-events-none absolute inset-0 z-0 rounded-[2.25rem] sm:rounded-[2.75rem]">
-                        <span className="nf-glass-blur nf-glass-blur-1"/>
-                        <span className="nf-glass-blur nf-glass-blur-2"/>
-                        <span className="nf-glass-blur nf-glass-blur-3"/>
-                        <span className="nf-glass-tint"/>
+                <hgroup className="mt-4 flex flex-col items-center">
+                    <div className="relative flex items-center justify-center">
+                        <div
+                            aria-hidden="true"
+                            className="nf-glass pointer-events-none absolute inset-0 z-0 rounded-[2.25rem] sm:rounded-[2.75rem]"
+                        >
+                            <span className="nf-glass-blur nf-glass-blur-1"/>
+                            <span className="nf-glass-blur nf-glass-blur-2"/>
+                            <span className="nf-glass-blur nf-glass-blur-3"/>
+                            <span className="nf-glass-tint"/>
+                        </div>
+                        <p
+                            aria-hidden="true"
+                            className="nf-404 relative z-10 px-[0.22em] py-[0.26em] text-[clamp(5.5rem,18vw,15rem)] leading-[0.82] font-black tracking-[0.01em] select-none"
+                        >
+                            404
+                        </p>
                     </div>
-                    <h1 className="nf-404 relative z-10 px-[0.22em] py-[0.26em] text-[clamp(5.5rem,18vw,15rem)] leading-[0.82] font-black tracking-[0.01em] select-none">
-                        404
-                    </h1>
-                </div>
 
-                <h2 className="nf-rise mt-4 text-2xl font-semibold tracking-tight text-balance sm:text-3xl [animation-delay:100ms]">
-                    {t("title")}
-                </h2>
+                    <h1
+                        id="not-found-title"
+                        className="nf-rise mt-4 text-2xl font-semibold tracking-tight text-balance sm:text-3xl [animation-delay:100ms]"
+                    >
+                        {t("title")}
+                    </h1>
+                </hgroup>
+
                 <p className="nf-rise mt-2 max-w-md text-sm leading-relaxed text-balance text-muted-foreground [animation-delay:160ms]">
                     {t("description")}
                     <br className="hidden sm:block"/>
                     <span className="text-muted-foreground/70">{t("reassurance")}</span>
                 </p>
 
-                <div className="nf-rise mt-4 w-full max-w-md [animation-delay:220ms]">
-                    <div
-                        className="flex items-center gap-2 rounded-xl border border-border/70 bg-background px-3.5 py-2.5 font-mono text-[11px] shadow-sm sm:text-xs">
-                        <span className="shrink-0 text-muted-foreground/60">GET</span>
-                        <span className="min-w-0 flex-1 truncate text-left text-muted-foreground" title={pathname}>
-                            {displayPath}
-                        </span>
-                        <span
-                            className="shrink-0 rounded-md border border-border/70 bg-muted px-1.5 py-0.5 font-semibold text-foreground">
-                            404
-                        </span>
-                    </div>
-                </div>
+                <p className="nf-rise mt-4 flex w-full max-w-md items-center gap-2 rounded-xl border border-border/70 bg-background px-3.5 py-2.5 font-mono text-[11px] shadow-sm sm:text-xs [animation-delay:220ms]">
+                    <span className="shrink-0 text-muted-foreground/60">GET</span>
+                    <code
+                        className="min-w-0 flex-1 truncate text-left text-muted-foreground"
+                        title={pathname}
+                    >
+                        {displayPath}
+                    </code>
+                    <span
+                        className="shrink-0 rounded-md border border-border/70 bg-muted px-1.5 py-0.5 font-semibold text-foreground">
+                        404
+                    </span>
+                </p>
 
-                <div className="nf-rise mt-6 flex flex-wrap items-center justify-center gap-3 [animation-delay:300ms]">
+                <nav
+                    aria-label="404 actions"
+                    className="nf-rise mt-6 flex flex-wrap items-center justify-center gap-3 [animation-delay:300ms]"
+                >
                     <Link
                         href={homePath}
                         className={cn(
@@ -543,7 +557,7 @@ export const NotFoundPage = ({homePath}: NotFoundPageProps) => {
                             "h-11 gap-2 rounded-full px-6 text-sm",
                         )}
                     >
-                        <Home className="size-4"/>
+                        <Home className="size-4" aria-hidden="true"/>
                         {t("home")}
                     </Link>
                     <Button
@@ -552,20 +566,21 @@ export const NotFoundPage = ({homePath}: NotFoundPageProps) => {
                         onClick={goBack}
                         className="h-11 gap-2 rounded-full px-5 text-sm"
                     >
-                        <ArrowLeft className="size-4"/>
+                        <ArrowLeft className="size-4" aria-hidden="true"/>
                         {t("back")}
                     </Button>
-                </div>
+                </nav>
 
                 <p className="nf-rise mt-6 flex items-center gap-2 rounded-full bg-background px-3 py-1 font-mono text-[10px] tracking-[0.18em] text-muted-foreground/70 uppercase [animation-delay:380ms]">
-                    <span className="size-1 animate-pulse rounded-full bg-foreground"/>
+                    <span aria-hidden="true" className="size-1 animate-pulse rounded-full bg-foreground"/>
                     {t("interactionHint")}
                 </p>
-            </div>
+            </section>
 
-            <p className="pointer-events-none absolute bottom-5 left-1/2 z-10 -translate-x-1/2 font-mono text-[10px] tracking-[0.4em] text-muted-foreground/40 uppercase">
+            <footer
+                className="pointer-events-none absolute bottom-5 left-1/2 z-10 -translate-x-1/2 font-mono text-[10px] tracking-[0.4em] text-muted-foreground/40 uppercase">
                 {FOOTER_SIGNATURE}
-            </p>
+            </footer>
         </main>
     );
 };
